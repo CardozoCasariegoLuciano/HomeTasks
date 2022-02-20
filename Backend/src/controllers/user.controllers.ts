@@ -32,20 +32,15 @@ export const deleteUser = async (req: Request, res: Response) => {
 
 export const changeName = async (req: Request, res: Response) => {
   try {
-    const user = req.user;
     const userLoged = req.userLoged;
+    const { name } = req.body;
 
-    if (user._id.toString() === userLoged) {
-      const { name } = req.body;
-      await changeName_validation.validateAsync({ name });
-      user.name = name;
-      await user.save();
+    const user = await User.findById(userLoged)
+    await changeName_validation.validateAsync({ name });
+    user!.name = name;
+    await user!.save();
 
-      return res.json({ Message: "Name successfully changed" });
-    }
-
-    return res.status(400).json({Error: "You just can change your name"})
-
+    return res.json({ Message: "Name successfully changed" });
   } catch (err) {
     return res
       .status(400)

@@ -43,6 +43,11 @@ export const register = async (req: Request, res: Response) => {
       name,
     });
 
+    const existUser = await User.findOne({ email });
+    if (existUser) {
+      return res.status(400).json({ Messaje: "That email was already taken"});
+    }
+
     const newUser = new User({
       name: value.name,
       email: value.email,
