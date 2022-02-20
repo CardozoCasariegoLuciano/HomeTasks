@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { config } from "../config";
+import {JwtPayload} from "../interfaces/token_interfaces";
 
 export const hasToken = async (
   req: Request,
@@ -25,6 +26,3 @@ export const hasToken = async (
   }
 };
 
-interface JwtPayload {
-  _id: string;
-}

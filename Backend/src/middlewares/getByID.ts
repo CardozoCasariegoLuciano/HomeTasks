@@ -13,7 +13,7 @@ export const getUserByID = async (
     const user = await User.findById(id).select({ password: 0 });
 
     if (!user) {
-      return res.status(400).json({ Error: "User not found" });
+      return res.status(400).json({ Message: "User not found" });
     }
 
     req.user = user;

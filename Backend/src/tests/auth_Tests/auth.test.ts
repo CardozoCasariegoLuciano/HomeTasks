@@ -1,6 +1,7 @@
-import { api, register_initialState } from "./helpers";
+import { api } from "../generic_helpers";
+import {register_initialState} from "./utils"
 import mongoose from "mongoose";
-import User from "../models/user.model";
+import User from "../../models/user.model";
 
 afterAll(() => {
   mongoose.disconnect();

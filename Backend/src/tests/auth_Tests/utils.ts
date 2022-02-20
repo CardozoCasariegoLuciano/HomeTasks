@@ -1,7 +1,3 @@
-import supertest from "supertest";
-import app from "../app";
-
-export const api = supertest(app);
 
 export const register_initialState = [
   {

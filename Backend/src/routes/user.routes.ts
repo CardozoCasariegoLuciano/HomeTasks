@@ -9,7 +9,7 @@ router.route("/")
 
 router.route("/:userId")
     .get(userCtrl.getAUser)
-    .delete(userCtrl.deleteUser)
+    //.delete(hasToken, userCtrl.deleteUser)
 
 router.route("/:userId/rename")
     .post(hasToken , userCtrl.changeName)
