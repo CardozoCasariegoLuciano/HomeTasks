@@ -1,7 +1,7 @@
 import { api } from "../generic_helpers";
 import {register_initialState} from "./utils"
 import mongoose from "mongoose";
-import User from "../../models/user.model";
+import User from "../../src/models/user.model";
 
 afterAll(() => {
   mongoose.disconnect();
@@ -91,9 +91,7 @@ describe("/api/auth", () => {
         const resp = await api.post(URI).send(aUser);
 
         expect(resp.statusCode).toBe(400);
-        expect(resp.body.Messaje).toBe("That email was already taken");
-        expect(resp.body.Type).toBe("MAIL_TAKEN");
-        expect(resp.body.Error).toBeDefined();
+        expect(resp.body.Message).toBe("That email was already taken");
       });
 
       test("Mustnt add a new user into de DB", async () => {

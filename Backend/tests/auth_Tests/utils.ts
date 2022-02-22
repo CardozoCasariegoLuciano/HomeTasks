@@ -1,4 +1,3 @@
-
 export const register_initialState = [
   {
     name: "Pepe",

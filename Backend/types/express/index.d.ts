@@ -7,7 +7,7 @@ declare global {
     interface Request {
       user: IUser;
       userLoged: string;
-      calendar: Icalendar;
+      calendar: ICalendar;
     }
   }
 }

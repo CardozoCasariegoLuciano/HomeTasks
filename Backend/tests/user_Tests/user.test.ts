@@ -1,10 +1,10 @@
-import { api } from "../generic_helpers";
-import User from "../../models/user.model";
-import { user01,user02, registerUser, URI, addUser } from "./utils";
+import { api, user01R, registerUser, addUser } from "../generic_helpers";
+import User from "../../src/models/user.model";
+import { URI } from "./utils";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken"
-import {config} from "../../config";
-import {JwtPayload} from "../../interfaces/token_interfaces";
+import {config} from "../../src/config";
+import {JwtPayload} from "../../src/interfaces/token_interfaces";
 
 afterAll(() => {
   mongoose.disconnect();
@@ -31,7 +31,7 @@ describe("/api/user", () => {
       const resp = await api.get(URI)
       expect(resp.body).toHaveLength(0)
 
-      await registerUser(user01)
+      await registerUser(user01R)
       const respAfeterRegister = await api.get(URI)
       expect(respAfeterRegister.body).toHaveLength(1)
     })
@@ -41,7 +41,7 @@ describe("/api/user", () => {
     describe("When a valid ID is sended", () => {
 
       test("Must respond a 200 status code", async()=>{
-        const user =  await addUser(user01)
+        const user =  await addUser(user01R)
         const id = user._id
 
         const resp = await api.get(URI+ "/" + id)
@@ -50,7 +50,7 @@ describe("/api/user", () => {
       })
 
       test("Must respond a single object", async()=>{
-        const user =  await addUser(user01)
+        const user =  await addUser(user01R)
         const id = user._id
 
         const resp = await api.get(URI+ "/" + id)
@@ -61,14 +61,14 @@ describe("/api/user", () => {
 
 
       test("Must respond the user data", async()=>{
-        const user =  await addUser(user01)
+        const user =  await addUser(user01R)
         const id = user._id
 
         const resp = await api.get(URI+ "/" + id)
 
         const expected = {
-          name: user01.name.toLowerCase(),
-          email: user01.email.toLowerCase(),
+          name: user.name.toLowerCase(),
+          email: user.email.toLowerCase(),
           invitations: [],
           calendars: [],
           _id: id
@@ -113,28 +113,6 @@ describe("/api/user", () => {
 
   })
 
-  //describe("DELETE /:id", () => {
-
-    //describe("When a valid ID is sended and has token", () => {
-      {/* TODO: must respond 200 statuscode sáb 19 feb 2022 01:54:24  */}
-      {/* TODO: mist respond a single object sáb 19 feb 2022 01:54:35  */}
-      {/* TODO: the user mustnt be in the database sáb 19 feb 2022 01:54:53  */}
-    //})
-
-    //describe("When a invalid ID is sended", () => {
-      {/* TODO: must respond 400 statuscode sáb 19 feb 2022 01:54:24  */}
-      {/* TODO: mist respond with a messaje sáb 19 feb 2022 01:54:35  */}
-      {/* TODO: the user must still being in the database sáb 19 feb 2022 01:54:53  */}
-    //})
-
-    //describe("When token is invalid or not sended", () => {
-      {/* TODO: must respond 400 statuscode sáb 19 feb 2022 01:54:24  */}
-      {/* TODO: mist respond with a messaje sáb 19 feb 2022 01:54:35  */}
-      {/* TODO: the user must still being in the database sáb 19 feb 2022 01:54:53  */}
-    //})
-
-  //})
-
   describe("POST /:id/rename", () => {
 
     describe("When a valid data is sended, and has token", () => {
@@ -142,32 +120,30 @@ describe("/api/user", () => {
       const newName = {name: "Rodolfo"}
 
       test("Must respond a 200 status code", async()=>{
-        const token =  await registerUser(user01)
-        const data =  jwt.verify(token, config.TOKEN_KEY) as JwtPayload
+        const token =  await registerUser(user01R)
 
-        const resp = await api.post(URI + "/" + data._id + "/rename").send(newName).set("Authorization", token)
+        const resp = await api.post(URI + "/rename").send(newName).set("Authorization", token)
 
         expect(resp.statusCode).toBe(200)
       })
 
       test("Must respond with a Message", async()=>{
-        const token =  await registerUser(user01)
-        const data =  jwt.verify(token, config.TOKEN_KEY) as JwtPayload
+        const token =  await registerUser(user01R)
 
-        const resp = await api.post(URI + "/" + data._id + "/rename").send(newName).set("Authorization", token)
+        const resp = await api.post(URI  + "/rename").send(newName).set("Authorization", token)
 
         expect(resp.body.Message).toBe("Name successfully changed")
       })
 
 
       test("The user name must change", async()=>{
-        const token =  await registerUser(user01)
+        const token =  await registerUser(user01R)
         const data =  jwt.verify(token, config.TOKEN_KEY) as JwtPayload
 
         const userFound = await api.get(URI + "/" + data._id)
         expect(userFound.body.name).toBe("pepe")
 
-        await api.post(URI + "/" + data._id + "/rename").send(newName).set("Authorization", token)
+        await api.post(URI + "/rename").send(newName).set("Authorization", token)
 
         const userNameChanged = await api.get(URI + "/" + data._id)
         expect(userNameChanged.body.name).toBe("rodolfo")
@@ -176,32 +152,30 @@ describe("/api/user", () => {
 
     describe("When a name is not sended", () => {
       test("Must respond a 400 status code", async()=>{
-        const token =  await registerUser(user01)
-        const data =  jwt.verify(token, config.TOKEN_KEY) as JwtPayload
+        const token =  await registerUser(user01R)
 
-        const resp = await api.post(URI + "/" + data._id + "/rename").send().set("Authorization", token)
+        const resp = await api.post(URI  + "/rename").send().set("Authorization", token)
 
         expect(resp.statusCode).toBe(400)
       })
 
       test("Must respond with a Message and an Error", async()=>{
-        const token =  await registerUser(user01)
-        const data =  jwt.verify(token, config.TOKEN_KEY) as JwtPayload
+        const token =  await registerUser(user01R)
 
-        const resp = await api.post(URI + "/" + data._id + "/rename").send().set("Authorization", token)
+        const resp = await api.post(URI + "/rename").send().set("Authorization", token)
 
         expect(resp.body.Message).toBe("Something went wrong")
         expect(resp.body.Error).toBeDefined()
       })
 
       test("The user name must not change", async()=>{
-        const token =  await registerUser(user01)
+        const token =  await registerUser(user01R)
         const data =  jwt.verify(token, config.TOKEN_KEY) as JwtPayload
 
         const userFound = await api.get(URI + "/" + data._id)
         expect(userFound.body.name).toBe("pepe")
 
-        await api.post(URI + "/" + data._id + "/rename").send().set("Authorization", token)
+        await api.post(URI + "/rename").send().set("Authorization", token)
 
         const userNameChanged = await api.get(URI + "/" + data._id)
         expect(userNameChanged.body.name).toBe("pepe")
@@ -214,35 +188,31 @@ describe("/api/user", () => {
       const newName = {name: "Rogelio"}
 
       test("Must respond a 400 status code", async()=>{
-        const token =  await registerUser(user01)
-        const data =  jwt.verify(token, config.TOKEN_KEY) as JwtPayload
 
         //token is not sended in the request
-        const resp = await api.post(URI + "/" + data._id + "/rename").send(newName)
+        const resp = await api.post(URI + "/rename").send(newName)
 
         expect(resp.statusCode).toBe(400)
       })
 
 
       test("Must respond with a Message and an Error", async()=>{
-        const token =  await registerUser(user01)
-        const data =  jwt.verify(token, config.TOKEN_KEY) as JwtPayload
 
         //token is not sended in the request
-        const resp = await api.post(URI + "/" + data._id + "/rename").send(newName)
+        const resp = await api.post(URI + "/rename").send(newName)
 
         expect(resp.body.Error).toBe("No token provider")
       })
 
       test("The user name must not change", async()=>{
-        const token =  await registerUser(user01)
+        const token =  await registerUser(user01R)
         const data =  jwt.verify(token, config.TOKEN_KEY) as JwtPayload
 
         const userFound = await api.get(URI + "/" + data._id)
         expect(userFound.body.name).toBe("pepe")
 
         //token is not sended in the request
-        await api.post(URI + "/" + data._id + "/rename").send(newName)
+        await api.post(URI + "/rename").send(newName)
 
         const userNameChanged = await api.get(URI + "/" + data._id)
         expect(userNameChanged.body.name).toBe("pepe")
@@ -250,50 +220,6 @@ describe("/api/user", () => {
 
     })
 
-    describe("When try to change other user's name", () => {
-
-      const newName = {name: "Ivan"}
-
-      test("Must respond a 400 status code", async()=>{
-        const user01_token =  await registerUser(user01)
-        const user01_data =  jwt.verify(user01_token, config.TOKEN_KEY) as JwtPayload
-        const user01_id = user01_data._id
-
-        const user02_token =  await registerUser(user02)
-
-        const resp = await api.post(URI + "/" + user01_id + "/rename").send(newName).set("Authorization", user02_token)
-
-        expect(resp.statusCode).toBe(400)
-      })
-
-      test("Must respond an Error", async()=>{
-        const user01_token =  await registerUser(user01)
-        const user01_data =  jwt.verify(user01_token, config.TOKEN_KEY) as JwtPayload
-        const user01_id = user01_data._id
-
-        const user02_token =  await registerUser(user02)
-
-        const resp = await api.post(URI + "/" + user01_id + "/rename").send(newName).set("Authorization", user02_token)
-
-        expect(resp.body.Error).toBe("You just can change your name")
-      })
-
-      test("The user name must not change", async()=>{
-        const user01_token =  await registerUser(user01)
-        const user01_data =  jwt.verify(user01_token, config.TOKEN_KEY) as JwtPayload
-        const user01_id = user01_data._id
-
-        const user02_token =  await registerUser(user02)
-
-        const userFound = await api.get(URI + "/" + user01_id)
-        expect(userFound.body.name).toBe("pepe")
-
-        await api.post(URI + "/" + user01_id + "/rename").send(newName).set("Authorization", user02_token)
-
-        const userNameChanged = await api.get(URI + "/" + user01_id)
-        expect(userNameChanged.body.name).toBe("pepe")
-      })
-    })
-
   })
 });
+

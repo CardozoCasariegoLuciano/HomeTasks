@@ -15,7 +15,7 @@ app.set("PORT",config.APP_PORT)
 
 //middlewares
 app.use(express.json())
-app.use(morgan("dev"))
+app.use(morgan("dev", {skip: (req, res) => process.env.NODE_ENV === "test"}))
 
 
 //routes

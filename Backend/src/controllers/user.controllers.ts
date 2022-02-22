@@ -16,20 +16,6 @@ export const getAUser = async (req: Request, res: Response) => {
   res.json(user);
 };
 
-export const deleteUser = async (req: Request, res: Response) => {
-  try {
-    const user = req.user;
-    const userDeleted = await User.findByIdAndDelete(user._id);
-
-    res.json({
-      Message: "User successfully deleted",
-      User_deleted: userDeleted!.email,
-    });
-  } catch (err) {
-    return res.status(400).json("Something went wrong");
-  }
-};
-
 export const changeName = async (req: Request, res: Response) => {
   try {
     const userLoged = req.userLoged;
