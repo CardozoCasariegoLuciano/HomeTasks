@@ -1,12 +1,12 @@
-import { Schema, model, Document, Model} from "mongoose";
+import mongoose, { Schema, model, Document, Model} from "mongoose";
 import bcrypt from "bcrypt"
 
 export interface IUser extends Document {
     name: string;
     email: string;
     password: string;
-    calendars: Schema.Types.ObjectId[];
-    invitations: Schema.Types.ObjectId[];
+    calendars: mongoose.Types.ObjectId[];
+    invitations: mongoose.Types.ObjectId[];
     comparePasswords(password: string): Promise<boolean>;
 }
 

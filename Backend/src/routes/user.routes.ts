@@ -13,6 +13,7 @@ router.route("/:userId")
 router.route("/rename")
     .post(hasToken , userCtrl.changeName)
 
+
 router.param("userId", getUserByID)
 
 

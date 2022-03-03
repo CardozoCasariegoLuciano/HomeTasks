@@ -1,6 +1,7 @@
-import { api, registerUser, user01R, user02R} from "../generic_helpers";
+import { api, getIdByToken, registerUser, user01R, user02R} from "../generic_helpers";
 import mongoose from "mongoose";
 import Calendar from "../../src/models/calendar.model"
+import Invitation from "../../src/models/invitation.model";
 import User from "../../src/models/user.model"
 import { badCases, cases, URI} from "./utils";
 
@@ -11,6 +12,7 @@ afterAll(() => {
 beforeEach(async () => {
     await Calendar.deleteMany({})
     await User.deleteMany({})
+    await Invitation.deleteMany({})
 })
 
 describe("/api/calendar", () => {
@@ -130,7 +132,6 @@ describe("/api/calendar", () => {
         })
     })
 
-
     describe("POST /", () => {
         describe("When has token and valid data", () => {
 
@@ -229,7 +230,7 @@ describe("/api/calendar", () => {
         })
     })
 
-    describe("PUT /:id/rename", () => {
+    describe("PUT /:id/edit", () => {
         describe("When has token, valid ID and is founder", () => {
 
             const body = cases[0]
@@ -251,18 +252,328 @@ describe("/api/calendar", () => {
                 expect(resp.statusCode).toBe(200)
             })
 
+            test("Should respond a Message and the new Calendar ", async()=>{
+                const token = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", token)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const newData = {
+                    title: "Perrosqui",
+                    description: "Ndeea"
+                }
+
+                const resp = await api
+                    .put(`${URI}/${calendarID}/edit`)
+                    .send(newData)
+                    .set("Authorization", token)
+
+                expect(resp.body.Calendar.title).toBe(newData.title.toLowerCase())
+                expect(resp.body.Calendar.description).toBe(newData.description)
+                expect(resp.body.Message).toBe("Data succesfuly changed")
+            })
+
+            test("The calendar name and/or description mush be diferent ", async()=>{
+                const token = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", token)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                expect(createdCalendar.body.Calendar.title).toBe(body.title.toLowerCase())
+                expect(createdCalendar.body.Calendar.description).toBeUndefined()
+
+                const newData = {
+                    title: "Perrosqui",
+                    description: "Ndeea"
+                }
+
+                const resp = await api
+                    .put(`${URI}/${calendarID}/edit`)
+                    .send(newData)
+                    .set("Authorization", token)
+
+                expect(resp.body.Calendar.title).toBe(newData.title.toLowerCase())
+                expect(resp.body.Calendar.description).toBe(newData.description)
+            })
         })
 
-        {/* TODO: when has token, valid data and is founder mar 22 feb 2022 11:13:08  */}
-        {/* TODO: when has token, valid data but is not founder mar 22 feb 2022 11:13:08  */}
-        {/* TODO: When has token but bad data mar 22 feb 2022 11:14:26  */}
-        {/* TODO: when no has token mar 22 feb 2022 11:14:38  */}
+        describe("When has token, valid ID and is not founder", () => {
+
+            const body = cases[0]
+
+            test("Should respond 400", async()=>{
+                const tokenFounder = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const newData = {
+                    title: "Perrosqui",
+                    description: "Ndeea"
+                }
+
+                const tokenUser = await registerUser(user02R)
+                const resp = await api
+                    .put(`${URI}/${calendarID}/edit`)
+                    .send(newData)
+                    .set("Authorization", tokenUser)
+                expect(resp.statusCode).toBe(400)
+            })
+
+            test("Should respond a Message", async()=>{
+                const tokenFounder = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const newData = {
+                    title: "Perrosqui",
+                    description: "Ndeea"
+                }
+
+                const tokenUser = await registerUser(user02R)
+                const resp = await api
+                    .put(`${URI}/${calendarID}/edit`)
+                    .send(newData)
+                    .set("Authorization", tokenUser)
+
+                expect(resp.body.Message).toBe("Just the founder can change the Calendar's name")
+            })
+
+            test("The calendar name and/or description mush not be diferent ", async()=>{
+                const tokenFounder = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const initialTitle = body.title.toLowerCase()
+
+                expect(createdCalendar.body.Calendar.title).toBe(initialTitle)
+                expect(createdCalendar.body.Calendar.description).toBeUndefined()
+
+                const newData = {
+                    title: "Perrosqui",
+                    description: "Ndeea"
+                }
+
+                const tokenUser = await registerUser(user02R)
+                await api
+                    .put(`${URI}/${calendarID}/edit`)
+                    .send(newData)
+                    .set("Authorization", tokenUser)
+
+                const calendar = await Calendar.findById(calendarID)
+
+                expect(calendar!.title).toBe(initialTitle)
+                expect(calendar!.description).toBeUndefined()
+            })
+        })
+
+        describe("When has token, is founder but no data is sended", () => {
+            const body = cases[0]
+
+            test("Should respond 400", async()=>{
+                const tokenFounder = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const resp = await api
+                    .put(`${URI}/${calendarID}/edit`)
+                    .set("Authorization", tokenFounder)
+                expect(resp.statusCode).toBe(400)
+            })
+
+            test("Should respond a Message and an Error", async()=>{
+                const tokenFounder = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const resp = await api
+                    .put(`${URI}/${calendarID}/edit`)
+                    .set("Authorization", tokenFounder)
+
+                expect(resp.body.Message).toBe("Something went wrong")
+                expect(resp.body.Error).toBeDefined()
+            })
+
+            test("The calendar name and/or description mush not be diferent ", async()=>{
+                const tokenFounder = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const initialTitle = body.title.toLowerCase()
+
+                expect(createdCalendar.body.Calendar.title).toBe(initialTitle)
+                expect(createdCalendar.body.Calendar.description).toBeUndefined()
+
+                await api
+                    .put(`${URI}/${calendarID}/edit`)
+                    .set("Authorization", tokenFounder)
+
+                const calendar = await Calendar.findById(calendarID)
+
+                expect(calendar!.title).toBe(initialTitle)
+                expect(calendar!.description).toBeUndefined()
+            })
+        })
+
+        describe("When no token is provided", () => {
+            const body = cases[0] 
+
+            test("Should respond 400", async()=>{
+
+                const tokenFounder = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const newData = {
+                    title: "New Title",
+                    description: "Desc"
+                }
+
+                const resp = await api
+                    .put(`${URI}/${calendarID}/edit`)
+                    .send(newData)
+                expect(resp.statusCode).toBe(400)
+            })
+
+            test("Should respond with an Error", async()=>{
+                const tokenFounder = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const newData = {
+                    title: "New Title",
+                    description: "Desc"
+                }
+
+                const resp = await api
+                    .put(`${URI}/${calendarID}/edit`)
+                    .send(newData)
+                    expect(resp.body.Error).toBe("No token provider")
+            })
+
+            test("The calendar name and/or description mush not be diferent", async()=>{
+
+                const tokenFounder = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const initialTitle = body.title.toLowerCase()
+
+                expect(createdCalendar.body.Calendar.title).toBe(initialTitle)
+                expect(createdCalendar.body.Calendar.description).toBeUndefined()
+
+                const newData = {
+                    title: "New Title",
+                    description: "Desc"
+                }
+
+                await api
+                    .put(`${URI}/${calendarID}/edit`)
+                    .send(newData)
+
+                const calendar = await Calendar.findById(calendarID)
+
+                expect(calendar!.title).toBe(initialTitle)
+                expect(calendar!.description).toBeUndefined()
+            })
+        })
     })
 
     describe("POST /:id/addmember", () => {
-        {/* TODO: when has token and valid data mar 22 feb 2022 11:13:08  */}
-        {/* TODO: When has token but bad data mar 22 feb 2022 11:14:26  */}
-        {/* TODO: when no has token mar 22 feb 2022 11:14:38  */}
+        describe("When has token, valid data and is founder", () => {
+            const body = cases[0] 
+
+            test("Should respond 200", async()=>{
+                const tokenUser = await registerUser(user02R)
+                const userID = await getIdByToken(tokenUser)
+
+                const tokenFounder = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const data = {
+                    members: [userID],
+                    message: "invited test"
+                }
+
+                const resp = await api.post(`${URI}/${calendarID}/addmember`).send(data).set("Authorization", tokenFounder)
+                expect(resp.statusCode).toBe(200)
+            })
+
+            test("Should add new Invitation into DB", async()=>{
+                const tokenUser = await registerUser(user02R)
+                const userID = await getIdByToken(tokenUser)
+
+                const tokenFounder = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const data = {
+                    members: [userID],
+                    message: "invited test"
+                }
+
+                const initialDB = await Invitation.find()
+                expect(initialDB).toHaveLength(0)
+
+                await api.post(`${URI}/${calendarID}/addmember`).send(data).set("Authorization", tokenFounder)
+                const dbresult = await Invitation.find()
+                expect(dbresult).toHaveLength(1)
+            })
+
+            test("The user should have a new invitations", async()=>{
+                const tokenUser = await registerUser(user02R)
+                const userID = await getIdByToken(tokenUser)
+
+                const tokenFounder = await registerUser(user01R)
+                const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder)
+                const calendarID = createdCalendar.body.Calendar._id
+
+                const data = {
+                    members: [userID],
+                    message: "invited test"
+                }
+
+                const initialUserDB = await User.findById(userID)
+                expect(initialUserDB!.invitations).toHaveLength(0)
+
+                await api.post(`${URI}/${calendarID}/addmember`).send(data).set("Authorization", tokenFounder)
+                const bdUserResut = await User.findById(userID)
+                expect(bdUserResut!.invitations).toHaveLength(1)
+            })
+        })
+
+        describe("When has token, valid data but is not founder", () => {
+            {/* TODO: Should reutrn 400 vie 25 feb 2022 17:52:42  */}
+            {/* TODO: Should return an Error vie 25 feb 2022 17:52:57  */}
+            {/* TODO: No invitation must be created vie 25 feb 2022 17:53:15  */}
+            {/* TODO: Users mustn't have new invitations  vie 25 feb 2022 17:53:37  */}
+        })
+
+        describe("When has token, is founder but no data is sended", () => {
+            {/* TODO: Should reutrn 400 vie 25 feb 2022 17:52:42  */}
+            {/* TODO: Should return a Message and an Error vie 25 feb 2022 17:52:57  */}
+            {/* TODO: No invitation must be created vie 25 feb 2022 17:53:15  */}
+            {/* TODO: Users mustn't have new invitations  vie 25 feb 2022 17:53:37  */}
+        })
+
+        describe("When has token, is founder but user not found", () => {
+            {/* TODO: Should reutrn 400 vie 25 feb 2022 17:52:42  */}
+            {/* TODO: Should return an Error vie 25 feb 2022 17:52:57  */}
+            {/* TODO: No invitation must be created vie 25 feb 2022 17:53:15  */}
+            {/* TODO: Users mustn't have new invitations  vie 25 feb 2022 17:53:37  */}
+        })
+
+        describe("When has token, is founder but user is already part of the calendar or was already invited", () => {
+            {/* TODO: Should reutrn 200 vie 25 feb 2022 17:52:42  */}
+            {/* TODO: Should return a Message vie 25 feb 2022 17:52:57  */}
+            {/* TODO: No invitation must be created vie 25 feb 2022 17:53:15  */}
+            {/* TODO: Users mustn't have new invitations  vie 25 feb 2022 17:53:37  */}
+        })
+
+        describe("When no token is provided", () => {
+            {/* TODO: Should respond 400 vie 25 feb 2022 18:18:58  */}
+            {/* TODO: Should respond an Error vie 25 feb 2022 18:19:16  */}
+            {/* TODO: No invitation must be created vie 25 feb 2022 17:53:15  */}
+            {/* TODO: Users mustn't have new invitations  vie 25 feb 2022 17:53:37  */}
+        })
     })
 
     describe("DELETE /:id", () => {

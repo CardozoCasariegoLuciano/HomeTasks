@@ -6,6 +6,7 @@ import "./database/database"
 import authroutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
 import calendarRoutes from "./routes/calendar.routes";
+import invitationsRoutes from "./routes/invitations.routes";
 
 const app = express()
 
@@ -22,5 +23,6 @@ app.use(morgan("dev", {skip: (req, res) => process.env.NODE_ENV === "test"}))
 app.use("/api/auth/", authroutes)
 app.use("/api/user/", userRoutes)
 app.use("/api/calendar/", calendarRoutes)
+app.use("/api/invitations/", invitationsRoutes)
 
 export default app

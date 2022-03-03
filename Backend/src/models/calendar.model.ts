@@ -1,11 +1,11 @@
-import { Schema, model, Document } from "mongoose";
+import mongoose, { Schema, model, Document } from "mongoose";
 
 export interface ICalendar extends Document {
   title: string;
   description: string;
-  members: Schema.Types.ObjectId[];
-  admins: Schema.Types.ObjectId[];
-  founder: Schema.Types.ObjectId;
+  members: mongoose.Types.ObjectId[];
+  admins: mongoose.Types.ObjectId[];
+  founder: mongoose.Types.ObjectId;
 }
 
 const CalendarSchema = new Schema(

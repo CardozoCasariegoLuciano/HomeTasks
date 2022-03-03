@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import Calendar, { ICalendar } from "../models/calendar.model";
-import User from "../models/user.model";
+import User, { IUser } from "../models/user.model";
 import Invitation from "../models/invitation.model";
 import {
   calendar_add_validation,
@@ -8,6 +8,7 @@ import {
 } from "./validations/calendar.validation";
 import mongoose from "mongoose";
 
+//Functions
 const isFounder = (userId: string, calendar: any) => {
   return userId === calendar.founder._id.toString();
 };
@@ -17,6 +18,19 @@ const isFounderOrAdmin = (userId: string, calendar: any) => {
   return calendar.members.includes(userID) || calendar.admins.includes(userID);
 };
 
+const wasAlreadyInvited = async ( user: IUser, calendar: ICalendar): Promise<Boolean> => {
+  let ret = false;
+  for (let invitationID of user.invitations) {
+    const invite = await Invitation.findById(invitationID);
+    if (invite!.calendarID.toString() === calendar._id.toString()) {
+      ret = true;
+      break;
+    }
+  }
+  return ret;
+};
+
+//EndPoints
 export const newCalendar = async (req: Request, res: Response) => {
   try {
     const userID = req.userLoged;
@@ -52,7 +66,7 @@ export const getACalendar = async (req: Request, res: Response) => {
     const calendar = req.calendar;
     const userID = req.userLoged;
 
-    if (!isFounderOrAdmin) {
+    if (!isFounderOrAdmin(userID, calendar)) {
       return res.status(400).json({ Message: "You can not get this Calendar" });
     }
 
@@ -83,7 +97,7 @@ export const editCalendar = async (req: Request, res: Response) => {
 
     await calendar.save();
 
-    res.json({ Message: "Title succesfuly changed", Calendar: calendar });
+    res.json({ Message: "Data succesfuly changed", Calendar: calendar });
   } catch (err) {
     return res
       .status(400)
@@ -99,7 +113,7 @@ export const addMembers = async (req: Request, res: Response) => {
 
     calendar_add_validation.validate({ list: members });
 
-    if (!isFounderOrAdmin) {
+    if (!isFounderOrAdmin(userID, calendar)) {
       return res
         .status(400)
         .json({ Error: "You need to be admin to send invitations" });
@@ -112,8 +126,9 @@ export const addMembers = async (req: Request, res: Response) => {
         return res.status(400).json({ Error: "User not found" });
       }
 
-      const wasAlreadyInvited = user.calendars.includes(calendar._id);
-      if (wasAlreadyInvited) {
+      const isAlreadyPart = user.calendars.includes(calendar._id);
+      const wasInvited = await wasAlreadyInvited(user, calendar);
+      if (isAlreadyPart || wasInvited) {
         continue;
       }
 
