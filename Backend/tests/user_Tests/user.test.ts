@@ -1,4 +1,4 @@
-import { api, user01R, registerUser, addUser } from "../generic_helpers";
+import { api, userToRegister, registerUser, addUser } from "../generic_helpers";
 import User from "../../src/models/user.model";
 import { URI } from "./utils";
 import mongoose from "mongoose";
@@ -31,7 +31,7 @@ describe("/api/user", () => {
       const resp = await api.get(URI)
       expect(resp.body).toHaveLength(0)
 
-      await registerUser(user01R)
+      await registerUser(userToRegister[0])
       const respAfeterRegister = await api.get(URI)
       expect(respAfeterRegister.body).toHaveLength(1)
     })
@@ -41,7 +41,7 @@ describe("/api/user", () => {
     describe("When a valid ID is sended", () => {
 
       test("Must respond a 200 status code", async()=>{
-        const user =  await addUser(user01R)
+        const user =  await addUser(userToRegister[0])
         const id = user._id
 
         const resp = await api.get(URI+ "/" + id)
@@ -50,7 +50,7 @@ describe("/api/user", () => {
       })
 
       test("Must respond a single object", async()=>{
-        const user =  await addUser(user01R)
+        const user =  await addUser(userToRegister[0])
         const id = user._id
 
         const resp = await api.get(URI+ "/" + id)
@@ -61,7 +61,7 @@ describe("/api/user", () => {
 
 
       test("Must respond the user data", async()=>{
-        const user =  await addUser(user01R)
+        const user =  await addUser(userToRegister[0])
         const id = user._id
 
         const resp = await api.get(URI+ "/" + id)
@@ -120,7 +120,7 @@ describe("/api/user", () => {
       const newName = {name: "Rodolfo"}
 
       test("Must respond a 200 status code", async()=>{
-        const token =  await registerUser(user01R)
+        const token =  await registerUser(userToRegister[0])
 
         const resp = await api.post(URI + "/rename").send(newName).set("Authorization", token)
 
@@ -128,7 +128,7 @@ describe("/api/user", () => {
       })
 
       test("Must respond with a Message", async()=>{
-        const token =  await registerUser(user01R)
+        const token =  await registerUser(userToRegister[0])
 
         const resp = await api.post(URI  + "/rename").send(newName).set("Authorization", token)
 
@@ -137,7 +137,7 @@ describe("/api/user", () => {
 
 
       test("The user name must change", async()=>{
-        const token =  await registerUser(user01R)
+        const token =  await registerUser(userToRegister[0])
         const data =  jwt.verify(token, config.TOKEN_KEY) as JwtPayload
 
         const userFound = await api.get(URI + "/" + data._id)
@@ -152,7 +152,7 @@ describe("/api/user", () => {
 
     describe("When a name is not sended", () => {
       test("Must respond a 400 status code", async()=>{
-        const token =  await registerUser(user01R)
+        const token =  await registerUser(userToRegister[0])
 
         const resp = await api.post(URI  + "/rename").send().set("Authorization", token)
 
@@ -160,7 +160,7 @@ describe("/api/user", () => {
       })
 
       test("Must respond with a Message and an Error", async()=>{
-        const token =  await registerUser(user01R)
+        const token =  await registerUser(userToRegister[0])
 
         const resp = await api.post(URI + "/rename").send().set("Authorization", token)
 
@@ -169,7 +169,7 @@ describe("/api/user", () => {
       })
 
       test("The user name must not change", async()=>{
-        const token =  await registerUser(user01R)
+        const token =  await registerUser(userToRegister[0])
         const data =  jwt.verify(token, config.TOKEN_KEY) as JwtPayload
 
         const userFound = await api.get(URI + "/" + data._id)
@@ -205,7 +205,7 @@ describe("/api/user", () => {
       })
 
       test("The user name must not change", async()=>{
-        const token =  await registerUser(user01R)
+        const token =  await registerUser(userToRegister[0])
         const data =  jwt.verify(token, config.TOKEN_KEY) as JwtPayload
 
         const userFound = await api.get(URI + "/" + data._id)
