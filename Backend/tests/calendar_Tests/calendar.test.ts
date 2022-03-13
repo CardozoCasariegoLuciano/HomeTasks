@@ -1098,28 +1098,157 @@ describe("/api/calendar", () => {
 
   describe("DELETE /:id", () => {
     describe("When has token and a valid ID and is founder", () => {
-      {/* TODO: "Should respond 200" vie 04 mar 2022 13:25:44  */}
-      {/* TODO: "The calendar should desapear from DB" vie 04 mar 2022 13:25:58  */}
-      {/* TODO: "The calendar must desapear from its members's list" vie 04 mar 2022 13:26:23  */}
-      {/* TODO: "The invitations from this calendar must desapear from user invitations" vie 04 mar 2022 13:27:37  */}
-      {/* TODO: "All invitation from this calendar must disapear" vie 04 mar 2022 13:26:53  */}
+
+      const body = cases[0];
+
+      test("Should respond 200", async()=>{
+        const tokenFounder = await registerUser(userToRegister[0]);
+        //Create calendar
+        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const resp = await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenFounder)
+        expect(resp.statusCode).toBe(200)
+      })
+
+      test("The calendar should desappear from DB", async()=>{
+        const tokenFounder = await registerUser(userToRegister[0]);
+        //Create calendar
+        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const dbAfterDelete = await Calendar.find()
+        expect(dbAfterDelete).toHaveLength(1)
+
+        await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenFounder)
+        const dbBeforeDelete = await Calendar.find()
+        expect(dbBeforeDelete).toHaveLength(0)
+      })
+
+      test("The calendar should desappear from its members list", async()=>{
+        const tokenFounder = await registerUser(userToRegister[0]);
+        const founderID = await getIdByToken(tokenFounder)
+        //Create calendar
+        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const userAfterDelete = await User.findById(founderID)
+        expect(userAfterDelete!.calendars).toHaveLength(1)
+
+        await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenFounder)
+        const userBeforeDelete = await User.findById(founderID)
+        expect(userBeforeDelete!.calendars).toHaveLength(0)
+      })
+
+      test("Invitations from this calendat must desapear from users invitation list", async()=>{
+        const tokenUser = await registerUser(userToRegister[1])
+        const userID = await getIdByToken(tokenUser)
+
+        const tokenFounder = await registerUser(userToRegister[0]);
+        //Create calendar
+        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        await api.post(`${URI}/${calendarID}/addmember`).send({members:[userID]}).set("Authorization", tokenFounder)
+
+        const userAfterDelete = await User.findById(userID)
+        expect(userAfterDelete!.invitations).toHaveLength(1)
+
+        await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenFounder)
+        const userBeforeDelete = await User.findById(userID)
+        expect(userBeforeDelete!.invitations).toHaveLength(0)
+      })
+
+      test("All invitation from this calendar should desappear from DB", async()=>{
+        const tokenUser = await registerUser(userToRegister[1])
+        const userID = await getIdByToken(tokenUser)
+
+        const tokenFounder = await registerUser(userToRegister[0]);
+        //Create calendar
+        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        await api.post(`${URI}/${calendarID}/addmember`).send({members:[userID]}).set("Authorization", tokenFounder)
+
+        const dbAfterDelete = await Invitation.find()
+        expect(dbAfterDelete).toHaveLength(1)
+
+        await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenFounder)
+        const dbBeforeDelete = await Invitation.find()
+        expect(dbBeforeDelete).toHaveLength(0)
+      })
     });
 
     describe("When has token a valid ID but is not fouder", () => {
-      {/* TODO: "Should respond 400" vie 04 mar 2022 13:25:44  */}
-      {/* TODO: "The calendar should not desapear from DB" vie 04 mar 2022 13:25:58  */}
+      const body = cases[0];
+
+      test("Should respond 400", async()=>{
+        const tokenUser = await registerUser(userToRegister[1])
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const resp = await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenUser)
+        expect(resp.statusCode).toBe(400)
+      })
+
+      test("The calendar should not desappear from DB", async()=>{
+        const tokenUser = await registerUser(userToRegister[1])
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const dbAfterDelete = await Calendar.find()
+        expect(dbAfterDelete).toHaveLength(1)
+
+        await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenUser)
+
+        const dbBeforeDelete = await Calendar.find()
+        expect(dbBeforeDelete).toHaveLength(1)
+      })
     });
 
     describe("When has token but bad ID ", () => {
-      {/* TODO: "Should respond 400" vie 04 mar 2022 13:25:44  */}
+      const body = cases[0]
+
+      test("Should return 400", async()=>{
+        const tokenFounder = await registerUser(userToRegister[0]);
+        const badID = "suPerBAADId"
+
+        const resp = await api.delete(`${URI}/${badID}`).set("Authorization", tokenFounder)
+        expect(resp.statusCode).toBe(400)
+      })
     });
 
     describe("When has token but calendar not found", () => {
-      {/* TODO: "Should respond 400" vie 04 mar 2022 13:25:44  */}
+      const body = cases[0]
+
+      test("Should return 400", async()=>{
+        const tokenFounder = await registerUser(userToRegister[0]);
+        const badID = "621fd14ec7e3fc74cd9189ac"
+
+        const resp = await api.delete(`${URI}/${badID}`).set("Authorization", tokenFounder)
+        expect(resp.statusCode).toBe(400)
+      })
     });
 
     describe("When token is not provided", () => {
-      {/* TODO: "Should respond 400" vie 04 mar 2022 13:25:44  */}
+      const body = cases[0]
+
+      test("Should return 400", async()=>{
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const resp = await api.delete(`${URI}/${calendarID}`)
+        expect(resp.statusCode).toBe(400)
+      })
     });
   });
 });

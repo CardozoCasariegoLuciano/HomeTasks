@@ -10,7 +10,7 @@ router.route("/")
 
 router.route("/:inviId")
     .get(hasToken, inviCtrl.getAInvitation)
-    .post(hasToken, inviCtrl.deleteInvi)
+    .post(hasToken, inviCtrl.occultInvi)
 
 router.route("/:inviId/accept")
     .post(hasToken , inviCtrl.acceptInvitation)

@@ -8,7 +8,7 @@ import { IDasObject } from "../helpers/functions";
 export const getInvitations = async (req: Request, res: Response) => {
   try {
     const userID = req.userLoged;
-    const allInvits = await Invitation.find({ to: userID, show: true })
+    const allInvits = await Invitation.find({ to: userID })
     res.json(allInvits);
   } catch (err) {
     return res
@@ -20,6 +20,14 @@ export const getInvitations = async (req: Request, res: Response) => {
 export const getAInvitation = async (req: Request, res: Response) => {
   try {
     const invi = req.invitation
+    const userID = req.userLoged
+
+    if (userID.toString() != invi.to.toString()) {
+      return res
+        .status(400)
+        .json({Error: "Cant ask for other user invitation"});
+      }
+
     res.json(invi);
   } catch (err) {
     return res
@@ -28,9 +36,16 @@ export const getAInvitation = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteInvi = async (req: Request ,res:Response) => {
+export const occultInvi = async (req: Request ,res:Response) => {
   try{
     const invitation = req.invitation;
+    const userID = req.userLoged
+
+    if (userID.toString() != invitation.to.toString()) {
+      return res
+        .status(400)
+        .json({Error: "Cant ask for other user invitation"});
+      }
 
     invitation.show = !invitation.show
     await invitation.save()
@@ -53,7 +68,6 @@ export const acceptInvitation = async (req: Request, res: Response) => {
     const calendar = await Calendar.findById(invitation.calendarID);
 
     if (calendar && invi) {
-
       if (invi.to.toString() != userID) {
         return res.status(400).json({Error: "no valid invitation for user logued"})
       }
@@ -82,6 +96,10 @@ export const rejectInvitation = async (req: Request, res: Response) => {
   try {
     const userID = req.userLoged;
     const invitation = req.invitation;
+
+    if (invitation.to.toString() != userID) {
+      return res.status(400).json({Error: "no valid invitation for user logued"})
+    }
 
     const user = await User.findById(userID);
     const invi = await Invitation.findById(invitation._id);
