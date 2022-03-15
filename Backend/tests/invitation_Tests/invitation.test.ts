@@ -651,27 +651,287 @@ describe("/api/invitation", () => {
   });
 
   describe("POST /:id/reject", () => {
+    const body = {
+      title: "Titulo",
+      description: "Description",
+    };
+
     describe("When have token and valid ID", () => {
-      {/* TODO: "Should return 200" dom 13 mar 2022 16:21:44  */}
-      {/* TODO: "The invitation status must change" dom 13 mar 2022 16:21:44  */}
-      {/* TODO: "The invitations must desappear from user invitations list" dom 13 mar 2022 16:21:44  */}
-      {/* TODO: "The user must not have other calendar in its list" dom 13 mar 2022 16:21:44  */}
+      test("Should return 200", async () => {
+        const tokenUser = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(tokenUser);
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Creating a calendar
+        const createdCalendar = await api
+          .post(URIcalendar)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const data = {
+          members: [userID],
+          message: "Invitation Test",
+        };
+
+        //Send invitations
+        await api
+          .post(`${URIcalendar}/${calendarID}/addmember`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+
+        const userLoged = await User.findById(userID);
+        const inviID = userLoged!.invitations[0];
+
+        //Rejecting invitation
+        const resp = await api
+          .post(`${URI}/${inviID}/reject`)
+          .set("Authorization", tokenUser);
+        expect(resp.statusCode).toBe(200);
+      });
+
+      test("The invitation status must change", async () => {
+        const tokenUser = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(tokenUser);
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Creating a calendar
+        const createdCalendar = await api
+          .post(URIcalendar)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const data = {
+          members: [userID],
+          message: "Invitation Test",
+        };
+
+        //Send invitations
+        await api
+          .post(`${URIcalendar}/${calendarID}/addmember`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+
+        const invi = await Invitation.findOne({to: userID})
+        expect(invi!.status).toBe("Pending");
+
+        //Rejecting invitation
+        const resp = await api
+          .post(`${URI}/${invi!._id}/reject`)
+          .set("Authorization", tokenUser);
+
+        const invi2 = await Invitation.findOne({to: userID})
+        expect(invi2!.status).toBe("Rejected");
+      });
+
+      test("The invitations must desappear from user invitations list", async () => {
+        const tokenUser = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(tokenUser);
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Creating a calendar
+        const createdCalendar = await api
+          .post(URIcalendar)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const data = {
+          members: [userID],
+          message: "Invitation Test",
+        };
+
+        //Send invitations
+        await api
+          .post(`${URIcalendar}/${calendarID}/addmember`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+
+        const userLoged = await User.findById(userID);
+        const inviID = userLoged!.invitations[0];
+        expect(userLoged!.invitations).toHaveLength(1)
+
+        //Rejecting invitation
+        await api
+          .post(`${URI}/${inviID}/reject`)
+          .set("Authorization", tokenUser);
+
+        const userLogedBefore = await User.findById(userID);
+        expect(userLogedBefore!.invitations).toHaveLength(0)
+      });
+
+      test("The user must not have other calendar in its list", async () => {
+        const tokenUser = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(tokenUser);
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Creating a calendar
+        const createdCalendar = await api
+          .post(URIcalendar)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const data = {
+          members: [userID],
+          message: "Invitation Test",
+        };
+
+        //Send invitations
+        await api
+          .post(`${URIcalendar}/${calendarID}/addmember`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+
+        const userLoged = await User.findById(userID);
+        const inviID = userLoged!.invitations[0];
+        expect(userLoged!.calendars).toHaveLength(0)
+
+        //Rejecting invitation
+        await api
+          .post(`${URI}/${inviID}/reject`)
+          .set("Authorization", tokenUser);
+
+        const userLogedBefore = await User.findById(userID);
+        expect(userLogedBefore!.calendars).toHaveLength(0)
+      });
     })
 
     describe("When try to change others invitations", () => {
-      {/* TODO: "Should respond 400 and Error defined" dom 13 mar 2022 16:20:14  */}
+      test("Should respond 400", async () => {
+        const tokenUser = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(tokenUser);
+        const tokenFounder = await registerUser(userToRegister[0]);
+        const otherUserToken = await registerUser(userToRegister[2]);
+
+        //Creating a calendar
+        const createdCalendar = await api
+          .post(URIcalendar)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const data = {
+          members: [userID],
+          message: "Invitation Test",
+        };
+
+        //Sending invitations
+        await api
+          .post(`${URIcalendar}/${calendarID}/addmember`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+
+        const userLoged = await User.findById(userID);
+        const inviID = userLoged!.invitations[0]._id;
+
+        //Rejecting invitation
+        const resp = await api
+          .post(`${URI}/${inviID}/reject`)
+          .set("Authorization", otherUserToken);
+
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined();
+      });
     })
 
     describe("When have token but bad ID", () => {
-      {/* TODO: "Should respond 400 and Error defined" dom 13 mar 2022 16:20:14  */}
+      test("Should respond 400", async () => {
+        const tokenUser = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(tokenUser);
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Creating a calendar
+        const createdCalendar = await api
+          .post(URIcalendar)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const data = {
+          members: [userID],
+          message: "Invitation Test",
+        };
+
+        await api
+          .post(`${URIcalendar}/${calendarID}/addmember`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+
+        const inviID = "INvalidId";
+
+        const resp = await api
+          .post(`${URI}/${inviID}/reject`)
+          .set("Authorization", tokenUser);
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined();
+      });
     })
 
     describe("When have token but invitation not found", () => {
-      {/* TODO: "Should respond 400 and Message defined" dom 13 mar 2022 16:20:14  */}
+      test("Should respond 400", async () => {
+        const tokenUser = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(tokenUser);
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Creating a calendar
+        const createdCalendar = await api
+          .post(URIcalendar)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const data = {
+          members: [userID],
+          message: "Invitation Test",
+        };
+
+        await api
+          .post(`${URIcalendar}/${calendarID}/addmember`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+
+        const inviID = "621fd14ec7e3fc74cd9189ac";
+
+        const resp = await api
+          .post(`${URI}/${inviID}/reject`)
+          .set("Authorization", tokenUser);
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Message).toBeDefined();
+      });
     })
 
     describe("When no token provided", () => {
-      {/* TODO: "Should respond 400 and Error defined" dom 13 mar 2022 16:20:14  */}
+      test("Should respond 400", async () => {
+        const tokenUser = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(tokenUser);
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Creating a calendar
+        const createdCalendar = await api
+          .post(URIcalendar)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const data = {
+          members: [userID],
+          message: "Invitation Test",
+        };
+
+        await api
+          .post(`${URIcalendar}/${calendarID}/addmember`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+
+        const userLoged = await User.findById(userID);
+        const inviID = userLoged!.invitations[0]._id;
+
+        const resp = await api.post(`${URI}/${inviID}/reject`);
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined();
+      });
     })
   });
 
