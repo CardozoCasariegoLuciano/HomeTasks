@@ -3,7 +3,7 @@ import Calendar, { ICalendar } from "../models/calendar.model";
 import User, { IUser } from "../models/user.model";
 import Invitation from "../models/invitation.model";
 import {
-  calendar_add_validation,
+  calendar_membersList_validation,
   calendar_validation,
 } from "./validations/calendar.validation";
 import mongoose from "mongoose";
@@ -11,11 +11,6 @@ import mongoose from "mongoose";
 //Functions
 const isFounder = (userId: string, calendar: any) => {
   return userId === calendar.founder._id.toString();
-};
-
-const isFounderOrAdmin = (userId: string, calendar: any) => {
-  const userID = new mongoose.Types.ObjectId(userId);
-  return calendar.members.includes(userID) || calendar.admins.includes(userID);
 };
 
 const wasAlreadyInvited = async ( user: IUser, calendar: ICalendar): Promise<Boolean> => {
@@ -29,6 +24,10 @@ const wasAlreadyInvited = async ( user: IUser, calendar: ICalendar): Promise<Boo
   }
   return ret;
 };
+
+const isAlreadyPart =(user: IUser, calendar: ICalendar): Boolean => {
+      return user.calendars.includes(calendar._id);
+}
 
 //EndPoints
 export const newCalendar = async (req: Request, res: Response) => {
@@ -66,7 +65,7 @@ export const getACalendar = async (req: Request, res: Response) => {
     const calendar = req.calendar;
     const userID = req.userLoged;
 
-    if (!isFounderOrAdmin(userID, calendar)) {
+    if (!isFounder(userID, calendar)) {
       return res.status(400).json({ Message: "You can not get this Calendar" });
     }
 
@@ -111,9 +110,9 @@ export const addMembers = async (req: Request, res: Response) => {
     const calendar = req.calendar;
     const { members, message } = req.body;
 
-    calendar_add_validation.validate({ list: members });
+    calendar_membersList_validation.validate({ list: members });
 
-    if (!isFounderOrAdmin(userID, calendar)) {
+    if (!isFounder(userID, calendar)) {
       return res
         .status(400)
         .json({ Error: "You need to be admin to send invitations" });
@@ -126,9 +125,8 @@ export const addMembers = async (req: Request, res: Response) => {
         return res.status(400).json({ Error: "User not found" });
       }
 
-      const isAlreadyPart = user.calendars.includes(calendar._id);
       const wasInvited = await wasAlreadyInvited(user, calendar);
-      if (isAlreadyPart || wasInvited) {
+      if (isAlreadyPart(user, calendar) || wasInvited) {
         continue;
       }
 
@@ -172,13 +170,6 @@ export const deleteCalendar = async (req: Request, res: Response) => {
       );
       await userFound!.save();
     }
-    for (let user of calendar.admins) {
-      const userFound = await User.findById(user);
-      userFound!.calendars = userFound!.calendars.filter(
-        (calenID) => calenID != calendar._id.toString()
-      );
-      await userFound!.save();
-    }
 
     //Deleting all invitations from this calendar
     //to user invitation list
@@ -205,3 +196,41 @@ export const deleteCalendar = async (req: Request, res: Response) => {
       .json({ Message: "Something went wrong", Error: err });
   }
 };
+
+export const deleteMember = async (req: Request ,res:Response) => {
+  try{
+    const {members} = req.body
+    const userID = req.userLoged
+    const calendar = req.calendar
+
+    calendar_membersList_validation.validate({ list: members });
+
+    const isHimSelf = members[0] === userID
+    if (!isHimSelf && !isFounder(userID, calendar)) {
+      return res.status(400).json({Error: "Just the founder can remove a user"})
+    }
+
+    const founder = calendar.founder._id.toString()
+    if (members.includes(founder)) {
+      return res.status(400).json({Error: "The founder cant be removed"})
+    }
+
+    for (let memberID of members) {
+      calendar.members = calendar.members.filter((memID) => memID != memberID)
+
+      const user = await User.findById(memberID)
+      if (!user || !isAlreadyPart(user, calendar)) {
+        continue
+      }
+
+      user.calendars = user.calendars.filter(cal => cal._id.toString() !== calendar._id.toString())
+      await user.save()
+    }
+
+    await calendar.save()
+
+   return res.status(200).json("Members removed")
+  }catch(err){
+    return res.status(400).json({Message: "Something went wrong", Error: err})
+  }
+}

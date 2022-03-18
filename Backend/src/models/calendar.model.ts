@@ -4,7 +4,6 @@ export interface ICalendar extends Document {
   title: string;
   description: string;
   members: mongoose.Types.ObjectId[];
-  admins: mongoose.Types.ObjectId[];
   founder: mongoose.Types.ObjectId;
 }
 
@@ -17,7 +16,7 @@ const CalendarSchema = new Schema(
     },
     description: {
       type: String,
-      trim: true
+      trim: true,
     },
     founder: {
       type: Schema.Types.ObjectId,
@@ -25,12 +24,6 @@ const CalendarSchema = new Schema(
       required: true,
     },
     members: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-    admins: [
       {
         type: Schema.Types.ObjectId,
         ref: "User",

@@ -1098,157 +1098,670 @@ describe("/api/calendar", () => {
 
   describe("DELETE /:id", () => {
     describe("When has token and a valid ID and is founder", () => {
-
       const body = cases[0];
 
-      test("Should respond 200", async()=>{
+      test("Should respond 200", async () => {
         const tokenFounder = await registerUser(userToRegister[0]);
         //Create calendar
-        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
         const calendarID = createdCalendar.body.Calendar._id;
 
-        const resp = await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenFounder)
-        expect(resp.statusCode).toBe(200)
-      })
+        const resp = await api
+          .delete(`${URI}/${calendarID}`)
+          .set("Authorization", tokenFounder);
+        expect(resp.statusCode).toBe(200);
+      });
 
-      test("The calendar should desappear from DB", async()=>{
+      test("The calendar should desappear from DB", async () => {
         const tokenFounder = await registerUser(userToRegister[0]);
         //Create calendar
-        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
         const calendarID = createdCalendar.body.Calendar._id;
 
-        const dbAfterDelete = await Calendar.find()
-        expect(dbAfterDelete).toHaveLength(1)
+        const dbAfterDelete = await Calendar.find();
+        expect(dbAfterDelete).toHaveLength(1);
 
-        await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenFounder)
-        const dbBeforeDelete = await Calendar.find()
-        expect(dbBeforeDelete).toHaveLength(0)
-      })
+        await api
+          .delete(`${URI}/${calendarID}`)
+          .set("Authorization", tokenFounder);
+        const dbBeforeDelete = await Calendar.find();
+        expect(dbBeforeDelete).toHaveLength(0);
+      });
 
-      test("The calendar should desappear from its members list", async()=>{
+      test("The calendar should desappear from its members list", async () => {
         const tokenFounder = await registerUser(userToRegister[0]);
-        const founderID = await getIdByToken(tokenFounder)
+        const founderID = await getIdByToken(tokenFounder);
         //Create calendar
-        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
         const calendarID = createdCalendar.body.Calendar._id;
 
-        const userAfterDelete = await User.findById(founderID)
-        expect(userAfterDelete!.calendars).toHaveLength(1)
+        const userAfterDelete = await User.findById(founderID);
+        expect(userAfterDelete!.calendars).toHaveLength(1);
 
-        await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenFounder)
-        const userBeforeDelete = await User.findById(founderID)
-        expect(userBeforeDelete!.calendars).toHaveLength(0)
-      })
+        await api
+          .delete(`${URI}/${calendarID}`)
+          .set("Authorization", tokenFounder);
+        const userBeforeDelete = await User.findById(founderID);
+        expect(userBeforeDelete!.calendars).toHaveLength(0);
+      });
 
-      test("Invitations from this calendat must desapear from users invitation list", async()=>{
-        const tokenUser = await registerUser(userToRegister[1])
-        const userID = await getIdByToken(tokenUser)
-
-        const tokenFounder = await registerUser(userToRegister[0]);
-        //Create calendar
-        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
-        const calendarID = createdCalendar.body.Calendar._id;
-
-        await api.post(`${URI}/${calendarID}/addmember`).send({members:[userID]}).set("Authorization", tokenFounder)
-
-        const userAfterDelete = await User.findById(userID)
-        expect(userAfterDelete!.invitations).toHaveLength(1)
-
-        await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenFounder)
-        const userBeforeDelete = await User.findById(userID)
-        expect(userBeforeDelete!.invitations).toHaveLength(0)
-      })
-
-      test("All invitation from this calendar should desappear from DB", async()=>{
-        const tokenUser = await registerUser(userToRegister[1])
-        const userID = await getIdByToken(tokenUser)
+      test("Invitations from this calendat must desapear from users invitation list", async () => {
+        const tokenUser = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(tokenUser);
 
         const tokenFounder = await registerUser(userToRegister[0]);
         //Create calendar
-        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
         const calendarID = createdCalendar.body.Calendar._id;
 
-        await api.post(`${URI}/${calendarID}/addmember`).send({members:[userID]}).set("Authorization", tokenFounder)
+        await api
+          .post(`${URI}/${calendarID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", tokenFounder);
 
-        const dbAfterDelete = await Invitation.find()
-        expect(dbAfterDelete).toHaveLength(1)
+        const userAfterDelete = await User.findById(userID);
+        expect(userAfterDelete!.invitations).toHaveLength(1);
 
-        await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenFounder)
-        const dbBeforeDelete = await Invitation.find()
-        expect(dbBeforeDelete).toHaveLength(0)
-      })
+        await api
+          .delete(`${URI}/${calendarID}`)
+          .set("Authorization", tokenFounder);
+        const userBeforeDelete = await User.findById(userID);
+        expect(userBeforeDelete!.invitations).toHaveLength(0);
+      });
+
+      test("All invitation from this calendar should desappear from DB", async () => {
+        const tokenUser = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(tokenUser);
+
+        const tokenFounder = await registerUser(userToRegister[0]);
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        await api
+          .post(`${URI}/${calendarID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", tokenFounder);
+
+        const dbAfterDelete = await Invitation.find();
+        expect(dbAfterDelete).toHaveLength(1);
+
+        await api
+          .delete(`${URI}/${calendarID}`)
+          .set("Authorization", tokenFounder);
+        const dbBeforeDelete = await Invitation.find();
+        expect(dbBeforeDelete).toHaveLength(0);
+      });
     });
 
     describe("When has token a valid ID but is not fouder", () => {
       const body = cases[0];
 
-      test("Should respond 400", async()=>{
-        const tokenUser = await registerUser(userToRegister[1])
+      test("Should respond 400", async () => {
+        const tokenUser = await registerUser(userToRegister[1]);
         const tokenFounder = await registerUser(userToRegister[0]);
 
         //Create calendar
-        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
         const calendarID = createdCalendar.body.Calendar._id;
 
-        const resp = await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenUser)
-        expect(resp.statusCode).toBe(400)
-      })
+        const resp = await api
+          .delete(`${URI}/${calendarID}`)
+          .set("Authorization", tokenUser);
+        expect(resp.statusCode).toBe(400);
+      });
 
-      test("The calendar should not desappear from DB", async()=>{
-        const tokenUser = await registerUser(userToRegister[1])
+      test("The calendar should not desappear from DB", async () => {
+        const tokenUser = await registerUser(userToRegister[1]);
         const tokenFounder = await registerUser(userToRegister[0]);
 
         //Create calendar
-        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
         const calendarID = createdCalendar.body.Calendar._id;
 
-        const dbAfterDelete = await Calendar.find()
-        expect(dbAfterDelete).toHaveLength(1)
+        const dbAfterDelete = await Calendar.find();
+        expect(dbAfterDelete).toHaveLength(1);
 
-        await api.delete(`${URI}/${calendarID}`).set("Authorization", tokenUser)
+        await api
+          .delete(`${URI}/${calendarID}`)
+          .set("Authorization", tokenUser);
 
-        const dbBeforeDelete = await Calendar.find()
-        expect(dbBeforeDelete).toHaveLength(1)
-      })
+        const dbBeforeDelete = await Calendar.find();
+        expect(dbBeforeDelete).toHaveLength(1);
+      });
     });
 
     describe("When has token but bad ID ", () => {
-      const body = cases[0]
+      const body = cases[0];
 
-      test("Should return 400", async()=>{
+      test("Should return 400", async () => {
         const tokenFounder = await registerUser(userToRegister[0]);
-        const badID = "suPerBAADId"
+        const badID = "suPerBAADId";
 
-        const resp = await api.delete(`${URI}/${badID}`).set("Authorization", tokenFounder)
-        expect(resp.statusCode).toBe(400)
-      })
+        const resp = await api
+          .delete(`${URI}/${badID}`)
+          .set("Authorization", tokenFounder);
+        expect(resp.statusCode).toBe(400);
+      });
     });
 
     describe("When has token but calendar not found", () => {
-      const body = cases[0]
+      const body = cases[0];
 
-      test("Should return 400", async()=>{
+      test("Should return 400", async () => {
         const tokenFounder = await registerUser(userToRegister[0]);
-        const badID = "621fd14ec7e3fc74cd9189ac"
+        const badID = "621fd14ec7e3fc74cd9189ac";
 
-        const resp = await api.delete(`${URI}/${badID}`).set("Authorization", tokenFounder)
-        expect(resp.statusCode).toBe(400)
-      })
+        const resp = await api
+          .delete(`${URI}/${badID}`)
+          .set("Authorization", tokenFounder);
+        expect(resp.statusCode).toBe(400);
+      });
     });
 
     describe("When token is not provided", () => {
-      const body = cases[0]
+      const body = cases[0];
 
-      test("Should return 400", async()=>{
+      test("Should return 400", async () => {
         const tokenFounder = await registerUser(userToRegister[0]);
 
         //Create calendar
-        const createdCalendar = await api.post(URI).send(body).set("Authorization", tokenFounder);
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
         const calendarID = createdCalendar.body.Calendar._id;
 
-        const resp = await api.delete(`${URI}/${calendarID}`)
-        expect(resp.statusCode).toBe(400)
-      })
+        const resp = await api.delete(`${URI}/${calendarID}`);
+        expect(resp.statusCode).toBe(400);
+      });
+    });
+  });
+
+  describe("DELETE /:id/deletemembers", () => {
+    const body = cases[0];
+
+    describe("When have token, valid calendar ID and valid list of members to delete", () => {
+      test("Should return 200", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //inviting user
+        await api
+          .post(`${URI}/${calendaID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //aceppting invitation
+        const invitation = await Invitation.findOne({ to: userID });
+        const inviID = invitation!._id;
+        await api
+          .post(`/api/invitations/${inviID}/accept`)
+          .set("Authorization", userToken);
+
+        //Deleting user
+        const cases = [{ members: [] }, { members: [userID] }];
+        for (let body of cases) {
+          const resp = await api
+            .delete(`${URI}/${calendaID}/deletemembers`)
+            .send(body)
+            .set("Authorization", founderToken);
+
+          //Assertion
+          expect(resp.statusCode).toBe(200);
+        }
+      });
+
+      test("The member list should have one less member", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //inviting user
+        await api
+          .post(`${URI}/${calendaID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //aceppting invitation
+        const invitation = await Invitation.findOne({ to: userID });
+        const inviID = invitation!._id;
+        await api
+          .post(`/api/invitations/${inviID}/accept`)
+          .set("Authorization", userToken);
+
+        const calendar = await Calendar.findById(calendaID);
+        expect(calendar!.members).toHaveLength(2);
+
+        //Deleting user
+        const resp = await api
+          .delete(`${URI}/${calendaID}/deletemembers`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //Assertion
+        const calendarBefore = await Calendar.findById(calendaID);
+        expect(calendarBefore!.members).toHaveLength(1);
+      });
+
+      test("The calendar should desappear from the user deleted list", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //inviting user
+        await api
+          .post(`${URI}/${calendaID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //aceppting invitation
+        const invitation = await Invitation.findOne({ to: userID });
+        const inviID = invitation!._id;
+        await api
+          .post(`/api/invitations/${inviID}/accept`)
+          .set("Authorization", userToken);
+
+        //Assertion
+        const user = await User.findById(userID);
+        expect(user!.calendars).toHaveLength(1);
+
+        //Deleting user
+        const resp = await api
+          .delete(`${URI}/${calendaID}/deletemembers`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //Assertion
+        const user2 = await User.findById(userID);
+        expect(user2!.calendars).toHaveLength(0);
+      });
+    });
+
+    describe("When a user try to remove himself", () => {
+      test("Should return 200", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //inviting user
+        await api
+          .post(`${URI}/${calendaID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //aceppting invitation
+        const invitation = await Invitation.findOne({ to: userID });
+        const inviID = invitation!._id;
+        await api
+          .post(`/api/invitations/${inviID}/accept`)
+          .set("Authorization", userToken);
+
+        //Deleting user
+        const resp = await api
+          .delete(`${URI}/${calendaID}/deletemembers`)
+          .send({ members: [userID] })
+          .set("Authorization", userToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(200);
+      });
+
+      test("The member list should have one less member", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //inviting user
+        await api
+          .post(`${URI}/${calendaID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //aceppting invitation
+        const invitation = await Invitation.findOne({ to: userID });
+        const inviID = invitation!._id;
+        await api
+          .post(`/api/invitations/${inviID}/accept`)
+          .set("Authorization", userToken);
+
+        const calendar = await Calendar.findById(calendaID);
+        expect(calendar!.members).toHaveLength(2);
+
+        //Deleting user
+        const resp = await api
+          .delete(`${URI}/${calendaID}/deletemembers`)
+          .send({ members: [userID] })
+          .set("Authorization", userToken);
+
+        //Assertion
+        const calendarBefore = await Calendar.findById(calendaID);
+        expect(calendarBefore!.members).toHaveLength(1);
+      });
+
+      test("The calendar should desappear from the user deleted list", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //inviting user
+        await api
+          .post(`${URI}/${calendaID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //aceppting invitation
+        const invitation = await Invitation.findOne({ to: userID });
+        const inviID = invitation!._id;
+        await api
+          .post(`/api/invitations/${inviID}/accept`)
+          .set("Authorization", userToken);
+
+        //Assertion
+        const user = await User.findById(userID);
+        expect(user!.calendars).toHaveLength(1);
+
+        //Deleting user
+        const resp = await api
+          .delete(`${URI}/${calendaID}/deletemembers`)
+          .send({ members: [userID] })
+          .set("Authorization", userToken);
+
+        //Assertion
+        const user2 = await User.findById(userID);
+        expect(user2!.calendars).toHaveLength(0);
+      });
+    });
+
+    describe("When the founder try to remove himself", () => {
+      test("Should return 400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const founderID = await getIdByToken(founderToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //Deleting user
+        const resp = await api
+          .delete(`${URI}/${calendaID}/deletemembers`)
+          .send({ members: [founderID] })
+          .set("Authorization", founderToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+      });
+    });
+
+    describe("When regular user try to remove other", () => {
+      test("Should return 400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const otherUserToken = await registerUser(userToRegister[2]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //inviting user
+        await api
+          .post(`${URI}/${calendaID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //aceppting invitation
+        const invitation = await Invitation.findOne({ to: userID });
+        const inviID = invitation!._id;
+        await api
+          .post(`/api/invitations/${inviID}/accept`)
+          .set("Authorization", userToken);
+
+        //Deleting user
+        const resp = await api
+          .delete(`${URI}/${calendaID}/deletemembers`)
+          .send({ members: [userID] })
+          .set("Authorization", otherUserToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined();
+      });
+    });
+
+    describe("When have token, valid ID but bad list of members", () => {
+      test("Should return 400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //inviting user
+        await api
+          .post(`${URI}/${calendaID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //aceppting invitation
+        const invitation = await Invitation.findOne({ to: userID });
+        const inviID = invitation!._id;
+        await api
+          .post(`/api/invitations/${inviID}/accept`)
+          .set("Authorization", userToken);
+
+        //Deleting user
+        const badCases = [
+          {},
+          { members: "NotAnArray" },
+          { members: ["BadID", "OtherBadId"] },
+        ];
+
+        for (let body of badCases) {
+          const resp = await api
+            .delete(`${URI}/${calendaID}/deletemembers`)
+            .send(body)
+            .set("Authorization", founderToken);
+
+          //Assertion
+          expect(resp.statusCode).toBe(400);
+          expect(resp.body.Error).toBeDefined();
+        }
+      });
+    });
+
+    describe("When have token, valid data but bad calendarID", () => {
+      test("Should return 400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //inviting user
+        await api
+          .post(`${URI}/${calendaID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //aceppting invitation
+        const invitation = await Invitation.findOne({ to: userID });
+        const inviID = invitation!._id;
+        await api
+          .post(`/api/invitations/${inviID}/accept`)
+          .set("Authorization", userToken);
+
+        //Deleting user
+        const badCalendID = "a9999sdasdkajsfa";
+
+        const resp = await api
+          .delete(`${URI}/${badCalendID}/deletemembers`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined();
+      });
+    });
+
+    describe("When have token, valid data but calendar not found", () => {
+      test("Should return 400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //inviting user
+        await api
+          .post(`${URI}/${calendaID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //aceppting invitation
+        const invitation = await Invitation.findOne({ to: userID });
+        const inviID = invitation!._id;
+        await api
+          .post(`/api/invitations/${inviID}/accept`)
+          .set("Authorization", userToken);
+
+        //Deleting user
+        const badCalendID = "622147b1925c47c4059b8c12";
+
+        const resp = await api
+          .delete(`${URI}/${badCalendID}/deletemembers`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Message).toBeDefined();
+      });
+    });
+
+    describe("When no token provided", () => {
+      const body = cases[0];
+
+      test("Should return 400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //inviting user
+        await api
+          .post(`${URI}/${calendaID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //aceppting invitation
+        const invitation = await Invitation.findOne({ to: userID });
+        const inviID = invitation!._id;
+        await api
+          .post(`/api/invitations/${inviID}/accept`)
+          .set("Authorization", userToken);
+
+        //Deleting user
+        const resp = await api
+          .delete(`${URI}/${calendaID}/deletemembers`)
+          .send({ members: [userID] });
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined();
+      });
     });
   });
 });

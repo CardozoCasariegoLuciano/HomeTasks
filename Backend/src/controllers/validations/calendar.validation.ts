@@ -6,6 +6,6 @@ export const calendar_validation = Joi.object({
   description: Joi.string().min(5)
 })
 
-export const calendar_add_validation = Joi.object({
+export const calendar_membersList_validation = Joi.object({
   list: Joi.array().items({id: mongoose.Types.ObjectId}).required(),
 })
