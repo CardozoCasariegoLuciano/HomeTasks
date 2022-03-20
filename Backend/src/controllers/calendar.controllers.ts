@@ -6,7 +6,6 @@ import {
   calendar_membersList_validation,
   calendar_validation,
 } from "./validations/calendar.validation";
-import mongoose from "mongoose";
 
 //Functions
 const isFounder = (userId: string, calendar: any) => {
@@ -230,6 +229,23 @@ export const deleteMember = async (req: Request ,res:Response) => {
     await calendar.save()
 
    return res.status(200).json("Members removed")
+  }catch(err){
+    return res.status(400).json({Message: "Something went wrong", Error: err})
+  }
+}
+
+export const getInvitations = async (req: Request ,res:Response) => {
+  try{
+    const userID = req.userLoged
+    const calendar = req.calendar
+
+    if (!isFounder(userID, calendar)) {
+      return res.status(400).json({Error: "Just the founder can ask for that data"})
+    }
+
+    const allInvitations = await Invitation.find({calendarID: calendar._id})
+
+    res.status(200).json({Invitations: allInvitations})
   }catch(err){
     return res.status(400).json({Message: "Something went wrong", Error: err})
   }

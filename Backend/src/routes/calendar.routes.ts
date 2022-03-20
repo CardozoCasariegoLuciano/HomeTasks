@@ -20,6 +20,9 @@ router.route("/:calendarID/addmember")
 router.route("/:calendarID/deletemembers")
     .delete(hasToken, calendarCtrl.deleteMember)
 
+router.route("/:calendarID/invitations")
+    .get(hasToken, calendarCtrl.getInvitations)
+
 router.param("calendarID", getCalendarByID)
 
 export default router;

@@ -1764,4 +1764,137 @@ describe("/api/calendar", () => {
       });
     });
   });
+
+  describe("GET /:id/invitations", () => {
+    const body = cases[0];
+
+    describe("When valid calendar ID is sended and is founder", () => {
+      test("Should respond  200", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //Getting invitations
+        const resp = await api
+          .get(`${URI}/${calendaID}/invitations`)
+          .set("Authorization", founderToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(200);
+      });
+
+      test("Should respond with an array", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //inviting user
+        await api
+          .post(`${URI}/${calendaID}/addmember`)
+          .send({ members: [userID] })
+          .set("Authorization", founderToken);
+
+        //Getting invitations
+        const resp = await api
+          .get(`${URI}/${calendaID}/invitations`)
+          .set("Authorization", founderToken);
+
+        //Assertion
+        expect(resp.body.Invitations).toBeInstanceOf(Array)
+        expect(resp.body.Invitations).toHaveLength(1)
+      });
+    });
+
+    describe("When calendar not found", () => {
+      test("Should respond  400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+
+        const badID = "621fd14ec7e3fc74cd9189ac";
+
+        //Getting invitations
+        const resp = await api
+          .get(`${URI}/${badID}/invitations`)
+          .set("Authorization", founderToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Message).toBeDefined()
+      });
+    })
+
+    describe("When no valid ID", () => {
+      test("Should respond  400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+
+        const badID = "NoValidID";
+
+        //Getting invitations
+        const resp = await api
+          .get(`${URI}/${badID}/invitations`)
+          .set("Authorization", founderToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined()
+      });
+    })
+
+    describe("When a regular user is loged", () => {
+      test("Should respond 400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //Getting invitations
+        const resp = await api
+          .get(`${URI}/${calendaID}/invitations`)
+          .set("Authorization", userToken)
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined()
+      });
+    })
+
+    describe("When no token provided", () => {
+      test("Should respond 400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+        const userID = await getIdByToken(userToken);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //Getting invitations
+        const resp = await api
+          .get(`${URI}/${calendaID}/invitations`)
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined()
+      });
+    })
+  });
 });
