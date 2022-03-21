@@ -23,6 +23,9 @@ router.route("/:calendarID/deletemembers")
 router.route("/:calendarID/invitations")
     .get(hasToken, calendarCtrl.getInvitations)
 
+router.route("/:calendarID/addtask")
+    .post(hasToken, calendarCtrl.createTask)
+
 router.param("calendarID", getCalendarByID)
 
 export default router;

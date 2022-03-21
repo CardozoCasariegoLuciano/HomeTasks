@@ -2,8 +2,10 @@ import { Request, Response } from "express";
 import Calendar, { ICalendar } from "../models/calendar.model";
 import User, { IUser } from "../models/user.model";
 import Invitation from "../models/invitation.model";
+import Task from "../models/task.model";
 import {
   calendar_membersList_validation,
+  calendar_tasks,
   calendar_validation,
 } from "./validations/calendar.validation";
 
@@ -248,5 +250,38 @@ export const getInvitations = async (req: Request ,res:Response) => {
     res.status(200).json({Invitations: allInvitations})
   }catch(err){
     return res.status(400).json({Message: "Something went wrong", Error: err})
+  }
+}
+
+export const createTask = async (req: Request ,res:Response) => {
+  try{
+    const userID = req.userLoged
+    const calendar = req.calendar
+    const {title, description, options} = req.body
+
+    if (!isFounder(userID, calendar)) {
+      return res.status(400).json({Error: "Just the founder can create a new task"})
+    }
+
+    const JoiRes = calendar_tasks.validate({title, description, options})
+    if (JoiRes.error) {
+      return res.status(400).json({Error: JoiRes.error})
+    }
+
+    const newTask = new Task({
+      title,
+      description,
+      options
+    })
+
+    calendar.tasks.push(newTask._id)
+
+    await calendar.save()
+    await newTask.save()
+
+    res.status(200).json({Message: "New task added"})
+
+  }catch(error){
+    return res.status(400).json({Message: "Something went wrong", Error: error})
   }
 }

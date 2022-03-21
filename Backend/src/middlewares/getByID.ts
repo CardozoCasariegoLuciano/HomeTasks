@@ -25,7 +25,7 @@ export const getUserByID = async ( req: Request, res: Response, next: NextFuncti
 export const getCalendarByID = async ( req: Request, res: Response, next: NextFunction, id: string) => {
   try {
     await objectID_validation.validateAsync({ id });
-    const calendar = await Calendar.findById(id).populate("founder", "name email _id");
+    const calendar = await Calendar.findById(id).populate("founder", "name email _id")
 
     if (!calendar) {
       return res.status(400).json({ Message: "Calendar not found" });

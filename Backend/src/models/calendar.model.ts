@@ -20,20 +20,20 @@ const CalendarSchema = new Schema(
       trim: true,
     },
     founder: {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Types.ObjectId,
       ref: "User",
       required: true,
     },
     members: [
       {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Types.ObjectId,
         ref: "User",
       },
     ],
     tasks: [
       {
-        type: Schema.Types.ObjectId,
-        ref: "Tasks",
+        type: mongoose.Types.ObjectId,
+        ref: "Task",
       },
     ],
   },
