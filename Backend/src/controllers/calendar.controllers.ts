@@ -279,9 +279,53 @@ export const createTask = async (req: Request ,res:Response) => {
     await calendar.save()
     await newTask.save()
 
-    res.status(200).json({Message: "New task added"})
+    res.status(200).json({Message: "New task added", Task: newTask})
 
   }catch(error){
     return res.status(400).json({Message: "Something went wrong", Error: error})
   }
 }
+
+export const getAllTasks = async (req: Request ,res:Response) => {
+  try{
+    const userID = req.userLoged
+    const calendar = req.calendar
+
+    if (!isFounder(userID, calendar)) {
+      return res.status(400).json({Error: "Just the founder can ask for that data"})
+    }
+
+    const calendarPolulated = await calendar.populate("tasks", "title description options")
+
+    res.status(200).json({Tasks: calendarPolulated.tasks})
+  }catch(err){
+    return res.status(400).json({Message: "Something went wrong", Error: err})
+  }
+}
+
+export const getATask = async (req: Request ,res:Response) => {
+  try{
+    const userID = req.userLoged
+    const task = req.task
+    const calendar = req.calendar
+
+    if (!isFounder(userID, calendar)) {
+      return res.status(400).json({Error: "Just the founder can ask for that data"})
+    }
+
+    const taskFinal = await Task.findById(task._id).select("-done")
+
+    res.status(200).json(taskFinal)
+  }catch(err){
+    return res.status(400).json({Message: "Something went wrong", Error: err})
+  }
+}
+
+export const deleteTask = async (req: Request ,res:Response) => {
+  try{
+    res.status(200).json("DeleteTask")
+  }catch(err){
+    return res.status(400).json({Message: "Something went wrong", Error: err})
+  }
+}
+
