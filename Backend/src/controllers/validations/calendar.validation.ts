@@ -16,3 +16,7 @@ export const calendar_tasks = Joi.object({
   description: Joi.string().min(5),
   options: Joi.array().items(Joi.string())
 })
+
+export const calendar_option_tasks = Joi.object({
+  options: Joi.array().items(Joi.string()).required()
+})

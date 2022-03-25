@@ -5,6 +5,7 @@ import Invitation from "../models/invitation.model";
 import Task from "../models/task.model";
 import {
   calendar_membersList_validation,
+  calendar_option_tasks,
   calendar_tasks,
   calendar_validation,
 } from "./validations/calendar.validation";
@@ -14,7 +15,10 @@ const isFounder = (userId: string, calendar: any) => {
   return userId === calendar.founder._id.toString();
 };
 
-const wasAlreadyInvited = async ( user: IUser, calendar: ICalendar): Promise<Boolean> => {
+const wasAlreadyInvited = async (
+  user: IUser,
+  calendar: ICalendar
+): Promise<Boolean> => {
   let ret = false;
   for (let invitationID of user.invitations) {
     const invite = await Invitation.findById(invitationID);
@@ -26,9 +30,9 @@ const wasAlreadyInvited = async ( user: IUser, calendar: ICalendar): Promise<Boo
   return ret;
 };
 
-const isAlreadyPart =(user: IUser, calendar: ICalendar): Boolean => {
-      return user.calendars.includes(calendar._id);
-}
+const isAlreadyPart = (user: IUser, calendar: ICalendar): Boolean => {
+  return user.calendars.includes(calendar._id);
+};
 
 //EndPoints
 export const newCalendar = async (req: Request, res: Response) => {
@@ -198,134 +202,204 @@ export const deleteCalendar = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteMember = async (req: Request ,res:Response) => {
-  try{
-    const {members} = req.body
-    const userID = req.userLoged
-    const calendar = req.calendar
+export const deleteMember = async (req: Request, res: Response) => {
+  try {
+    const { members } = req.body;
+    const userID = req.userLoged;
+    const calendar = req.calendar;
 
     calendar_membersList_validation.validate({ list: members });
 
-    const isHimSelf = members[0] === userID
+    const isHimSelf = members[0] === userID;
     if (!isHimSelf && !isFounder(userID, calendar)) {
-      return res.status(400).json({Error: "Just the founder can remove a user"})
+      return res
+        .status(400)
+        .json({ Error: "Just the founder can remove a user" });
     }
 
-    const founder = calendar.founder._id.toString()
+    const founder = calendar.founder._id.toString();
     if (members.includes(founder)) {
-      return res.status(400).json({Error: "The founder cant be removed"})
+      return res.status(400).json({ Error: "The founder cant be removed" });
     }
 
     for (let memberID of members) {
-      calendar.members = calendar.members.filter((memID) => memID != memberID)
+      calendar.members = calendar.members.filter((memID) => memID != memberID);
 
-      const user = await User.findById(memberID)
+      const user = await User.findById(memberID);
       if (!user || !isAlreadyPart(user, calendar)) {
-        continue
+        continue;
       }
 
-      user.calendars = user.calendars.filter(cal => cal._id.toString() !== calendar._id.toString())
-      await user.save()
+      user.calendars = user.calendars.filter(
+        (cal) => cal._id.toString() !== calendar._id.toString()
+      );
+      await user.save();
     }
 
-    await calendar.save()
+    await calendar.save();
 
-   return res.status(200).json("Members removed")
-  }catch(err){
-    return res.status(400).json({Message: "Something went wrong", Error: err})
+    return res.status(200).json("Members removed");
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: err });
   }
-}
+};
 
-export const getInvitations = async (req: Request ,res:Response) => {
-  try{
-    const userID = req.userLoged
-    const calendar = req.calendar
+export const getInvitations = async (req: Request, res: Response) => {
+  try {
+    const userID = req.userLoged;
+    const calendar = req.calendar;
 
     if (!isFounder(userID, calendar)) {
-      return res.status(400).json({Error: "Just the founder can ask for that data"})
+      return res
+        .status(400)
+        .json({ Error: "Just the founder can ask for that data" });
     }
 
-    const allInvitations = await Invitation.find({calendarID: calendar._id})
+    const allInvitations = await Invitation.find({ calendarID: calendar._id });
 
-    res.status(200).json({Invitations: allInvitations})
-  }catch(err){
-    return res.status(400).json({Message: "Something went wrong", Error: err})
+    res.status(200).json({ Invitations: allInvitations });
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: err });
   }
-}
+};
 
-export const createTask = async (req: Request ,res:Response) => {
-  try{
-    const userID = req.userLoged
-    const calendar = req.calendar
-    const {title, description, options} = req.body
+export const createTask = async (req: Request, res: Response) => {
+  try {
+    const userID = req.userLoged;
+    const calendar = req.calendar;
+    const { title, description, options } = req.body;
 
     if (!isFounder(userID, calendar)) {
-      return res.status(400).json({Error: "Just the founder can create a new task"})
+      return res
+        .status(400)
+        .json({ Error: "Just the founder can create a new task" });
     }
 
-    const JoiRes = calendar_tasks.validate({title, description, options})
+    const JoiRes = calendar_tasks.validate({ title, description, options });
     if (JoiRes.error) {
-      return res.status(400).json({Error: JoiRes.error})
+      return res.status(400).json({ Error: JoiRes.error });
     }
 
     const newTask = new Task({
       title,
       description,
-      options
-    })
+      options,
+    });
 
-    calendar.tasks.push(newTask._id)
+    calendar.tasks.push(newTask._id);
 
-    await calendar.save()
-    await newTask.save()
+    await calendar.save();
+    await newTask.save();
 
-    res.status(200).json({Message: "New task added", Task: newTask})
-
-  }catch(error){
-    return res.status(400).json({Message: "Something went wrong", Error: error})
+    res.status(200).json({ Message: "New task added", Task: newTask });
+  } catch (error) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: error });
   }
-}
+};
 
-export const getAllTasks = async (req: Request ,res:Response) => {
-  try{
-    const userID = req.userLoged
-    const calendar = req.calendar
+export const getAllTasks = async (req: Request, res: Response) => {
+  try {
+    const userID = req.userLoged;
+    const calendar = req.calendar;
 
     if (!isFounder(userID, calendar)) {
-      return res.status(400).json({Error: "Just the founder can ask for that data"})
+      return res
+        .status(400)
+        .json({ Error: "Just the founder can ask for that data" });
     }
 
-    const calendarPolulated = await calendar.populate("tasks", "title description options")
+    const calendarPolulated = await calendar.populate(
+      "tasks",
+      "title description options"
+    );
 
-    res.status(200).json({Tasks: calendarPolulated.tasks})
-  }catch(err){
-    return res.status(400).json({Message: "Something went wrong", Error: err})
+    res.status(200).json({ Tasks: calendarPolulated.tasks });
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: err });
   }
-}
+};
 
-export const getATask = async (req: Request ,res:Response) => {
-  try{
-    const userID = req.userLoged
-    const task = req.task
-    const calendar = req.calendar
+export const getATask = async (req: Request, res: Response) => {
+  try {
+    const userID = req.userLoged;
+    const task = req.task;
+    const calendar = req.calendar;
 
     if (!isFounder(userID, calendar)) {
-      return res.status(400).json({Error: "Just the founder can ask for that data"})
+      return res
+        .status(400)
+        .json({ Error: "Just the founder can ask for that data" });
     }
 
-    const taskFinal = await Task.findById(task._id).select("-done")
+    const taskFinal = await Task.findById(task._id).select("-done");
 
-    res.status(200).json(taskFinal)
-  }catch(err){
-    return res.status(400).json({Message: "Something went wrong", Error: err})
+    res.status(200).json(taskFinal);
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: err });
   }
-}
+};
 
-export const deleteTask = async (req: Request ,res:Response) => {
-  try{
-    res.status(200).json("DeleteTask")
-  }catch(err){
-    return res.status(400).json({Message: "Something went wrong", Error: err})
+export const deleteTask = async (req: Request, res: Response) => {
+  try {
+    const userID = req.userLoged;
+    const calendar = req.calendar;
+    const task = req.task;
+
+    if (!isFounder(userID, calendar)) {
+      return res
+        .status(400)
+        .json({ Error: "Just the founder can delete a task" });
+    }
+
+    calendar.tasks = calendar.tasks.filter(
+      (t) => t._id.toString() != task._id.toString()
+    );
+    await calendar.save();
+    await Task.findByIdAndDelete(task._id);
+
+    res.status(200).json("DeleteTask");
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: err });
   }
-}
+};
 
+export const addTaskOption = async (req: Request, res: Response) => {
+  try {
+    const userID = req.userLoged;
+    const calendar = req.calendar;
+    const { options } = req.body;
+    const task = req.task;
+
+    if (!isFounder(userID, calendar)) {
+      return res
+        .status(400)
+        .json({ Error: "Just the founder can add an option" });
+    }
+
+    const joiVal = calendar_option_tasks.validate({ options });
+    if (joiVal.error) {
+      return res.status(400).json({ Error: joiVal.error });
+    }
+
+    task.options = task.options.concat(options);
+    await task.save();
+
+    res.status(200).json({ Message: "Options added" });
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: err });
+  }
+};

@@ -34,6 +34,9 @@ router.route("/:calendarID/task/:taskID")
     .get(hasToken, calendarCtrl.getATask)
     .delete(hasToken, calendarCtrl.deleteTask)
 
+router.route("/:calendarID/task/:taskID/option")
+    .post(hasToken, calendarCtrl.addTaskOption)
+
 
 router.param("calendarID", getCalendarByID)
 router.param("taskID", getTaskByID)

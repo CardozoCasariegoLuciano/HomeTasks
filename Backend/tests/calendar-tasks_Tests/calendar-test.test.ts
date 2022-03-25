@@ -630,12 +630,416 @@ describe("/api/calendar", () => {
   });
 
   describe("DELETE /:id/task/:id", () => {
-    describe("When valid calendar and task ID and have token", () => {});
-    describe("When no valid calendar ID", () => {});
-    describe("When calendar not found", () => {});
-    describe("When no valid task ID", () => {});
-    describe("When task not found", () => {});
-    describe("When a regular user try to delete a task", () => {});
-    describe("When no token is provided", () => {});
+    describe("When valid calendar and task ID and have token", () => {
+      test("Should return 200", async () => {
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        const data = {
+          title: "titulo",
+          description: "descripcion",
+        };
+
+        //Creating a task
+        const createdTask = await api
+          .post(`${URI}/${calendaID}/addtask`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+
+        const taskID = createdTask.body.Task._id;
+
+        //Deleting task
+        const resp = await api
+          .delete(`${URI}/${calendaID}/task/${taskID}`)
+          .set("Authorization", tokenFounder);
+
+        expect(resp.statusCode).toBe(200);
+      });
+
+      test("Should detele the task from calendar", async () => {
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        const data = {
+          title: "titulo",
+          description: "descripcion",
+        };
+
+        //Creating a task
+        const createdTask = await api
+          .post(`${URI}/${calendaID}/addtask`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+
+        const taskID = createdTask.body.Task._id;
+
+        //Assertion
+        const calendarDB1 = await Calendar.findById(calendaID);
+        expect(calendarDB1!.tasks).toHaveLength(1);
+
+        //Deleting task
+        const resp = await api
+          .delete(`${URI}/${calendaID}/task/${taskID}`)
+          .set("Authorization", tokenFounder);
+
+        //Assertion
+        const calendarDB2 = await Calendar.findById(calendaID);
+        expect(calendarDB2!.tasks).toHaveLength(0);
+      });
+
+      test("Should detele the task from DB", async () => {
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        const data = {
+          title: "titulo",
+          description: "descripcion",
+        };
+
+        //Creating a task
+        const createdTask = await api
+          .post(`${URI}/${calendaID}/addtask`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+
+        const taskID = createdTask.body.Task._id;
+
+        //Assertion
+        const taskA = await Task.findById(taskID);
+        expect(taskA).not.toBeNull();
+
+        //Deleting task
+        await api
+          .delete(`${URI}/${calendaID}/task/${taskID}`)
+          .set("Authorization", tokenFounder);
+
+        //Assertion
+        const taskB = await Task.findById(taskID);
+        expect(taskB).toBeNull();
+      });
+    });
+
+    describe("When no valid calendar ID", () => {
+      test("Should respond  400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+
+        const badID = "NoValidID";
+
+        //Deleting task
+        const resp = await api
+          .delete(`${URI}/${badID}/task/unIdrandom`)
+          .set("Authorization", founderToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined();
+      });
+    });
+
+    describe("When calendar not found", () => {
+      test("Should respond  400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+
+        const badID = "627fd14ec7e3fc74cd9189ac";
+
+        //Deleting task
+        const resp = await api
+          .delete(`${URI}/${badID}/task/unIdrandom`)
+          .set("Authorization", founderToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Message).toBeDefined();
+      });
+    });
+
+    describe("When no valid task ID", () => {
+      test("Should respond  400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const badTaskID = "627fd14ec7e3fc74cd9189ac";
+
+        //Deleting task
+        const resp = await api
+          .delete(`${URI}/${calendarID}/task/${badTaskID}`)
+          .set("Authorization", founderToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Message).toBeDefined();
+      });
+    });
+
+    describe("When task not found", () => {
+      test("Should respond  400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        const badTaskID = "627fd14ec7e3fc74cd9189ac";
+
+        //Deleting task
+        const resp = await api
+          .delete(`${URI}/${calendarID}/task/${badTaskID}`)
+          .set("Authorization", founderToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Message).toBeDefined();
+      });
+    });
+
+    describe("When a regular user try to delete a task", () => {
+      test("Should respond 400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //Adding a new task
+        const data = {
+          title: "Tarea 1",
+          description: "Alta tarea loco",
+          options: ["ropa", "baño"],
+        };
+        const task = await api
+          .post(`${URI}/${calendaID}/addtask`)
+          .send(data)
+          .set("Authorization", founderToken);
+
+        const taskID = task.body.Task._id;
+
+        //Deleting task
+        const resp = await api
+          .delete(`${URI}/${calendaID}/task/${taskID}`)
+          .set("Authorization", userToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined();
+      });
+    });
+
+    describe("When no token is provided", () => {
+      test("Should respond 400", async () => {
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendarID = createdCalendar.body.Calendar._id;
+
+        //Adding a new task
+        const data = {
+          title: "Tarea 1",
+          description: "Alta tarea loco",
+          options: ["ropa", "baño"],
+        };
+        const task = await api
+          .post(`${URI}/${calendarID}/addtask`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+        const taskID = task.body.Task._id;
+
+        //Deleting task
+        const resp = await api.delete(`${URI}/${calendarID}/task/${taskID}`);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined();
+      });
+    });
+  });
+
+  describe("POST /:id/task/:id/addTaksOption", () => {
+    describe("When have token, valid data and IDs", () => {
+      test("Should return 200", async () => {
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //Create task
+        const data = {
+          title: "titulo",
+          description: "descripcion",
+        };
+
+        const createdTask = await api
+          .post(`${URI}/${calendaID}/addtask`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+        const taskID = createdTask.body.Task._id;
+
+        //Addin an option
+        const dataOption = { options: ["Baño", "Pisos", "Platos"] };
+        const resp = await api
+          .post(`${URI}/${calendaID}/task/${taskID}/option`)
+          .send(dataOption)
+          .set("Authorization", tokenFounder);
+
+        expect(resp.statusCode).toBe(200);
+      });
+
+      test("Should add a new option into the task", async () => {
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //Create task
+        const data = {
+          title: "titulo",
+          description: "descripcion",
+        };
+
+        const createdTask = await api
+          .post(`${URI}/${calendaID}/addtask`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+        const taskID = createdTask.body.Task._id;
+
+        //Assertion
+        const taskA = await Task.findById(taskID);
+        console.log(taskA!);
+        expect(taskA!.options).toStrictEqual([]);
+
+        //Adding an option
+        const dataOption = {
+          options: ["Baño", "Pisos", "Platos"],
+        };
+        await api
+          .post(`${URI}/${calendaID}/task/${taskID}/option`)
+          .send(dataOption)
+          .set("Authorization", tokenFounder);
+
+        //Assertion
+        const taskB = await Task.findById(taskID);
+        console.log(taskB!);
+        expect(taskB!.options).toStrictEqual(dataOption.options);
+      });
+    });
+
+    describe("When has token, valid IDs but no valid Data", () => {
+      test("Should respond 400 with no valid data", async () => {
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        // Creating a task
+        const data = {
+          title: "Tarea01",
+        };
+
+        const createdTask = await api
+          .post(`${URI}/${calendaID}/addtask`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+        const taskID = createdTask.body.Task._id;
+
+        //Adding an option
+        const badDataOption = [
+          {},
+          { options: [123, 123123] },
+          { options: ["bien", 123123] },
+        ];
+
+        for (let dataOption of badDataOption) {
+          const resp = await api
+            .post(`${URI}/${calendaID}/task/${taskID}/option`)
+            .send(dataOption)
+            .set("Authorization", tokenFounder);
+
+          expect(resp.statusCode).toBe(400);
+          expect(resp.body.Error).toBeDefined();
+        }
+      });
+    });
+
+    describe("When a regular user try to add an option", () => {
+      test("Should respond 400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //Creating a tasks
+        const data = { title: "algoo" };
+
+        const createdTask = await api
+          .post(`${URI}/${calendaID}/addtask`)
+          .send(data)
+          .set("Authorization", founderToken);
+        const taskID = createdTask.body.Task._id;
+
+        //Adding options
+        const dataOptions = {
+          options: ["algo"],
+        };
+        const resp = await api
+          .post(`${URI}/${calendaID}/task/${taskID}/option`)
+          .send(dataOptions)
+          .set("Authorization", userToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined();
+      });
+    });
   });
 });
