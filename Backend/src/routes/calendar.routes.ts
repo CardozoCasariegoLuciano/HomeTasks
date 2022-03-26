@@ -36,6 +36,7 @@ router.route("/:calendarID/task/:taskID")
 
 router.route("/:calendarID/task/:taskID/option")
     .post(hasToken, calendarCtrl.addTaskOption)
+    .put(hasToken, calendarCtrl.editTaksOptions)
 
 
 router.param("calendarID", getCalendarByID)

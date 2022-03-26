@@ -888,7 +888,7 @@ describe("/api/calendar", () => {
     });
   });
 
-  describe("POST /:id/task/:id/addTaksOption", () => {
+  describe("POST /:id/task/:id/option", () => {
     describe("When have token, valid data and IDs", () => {
       test("Should return 200", async () => {
         const tokenFounder = await registerUser(userToRegister[0]);
@@ -946,7 +946,6 @@ describe("/api/calendar", () => {
 
         //Assertion
         const taskA = await Task.findById(taskID);
-        console.log(taskA!);
         expect(taskA!.options).toStrictEqual([]);
 
         //Adding an option
@@ -960,7 +959,6 @@ describe("/api/calendar", () => {
 
         //Assertion
         const taskB = await Task.findById(taskID);
-        console.log(taskB!);
         expect(taskB!.options).toStrictEqual(dataOption.options);
       });
     });
@@ -1033,6 +1031,192 @@ describe("/api/calendar", () => {
         };
         const resp = await api
           .post(`${URI}/${calendaID}/task/${taskID}/option`)
+          .send(dataOptions)
+          .set("Authorization", userToken);
+
+        //Assertion
+        expect(resp.statusCode).toBe(400);
+        expect(resp.body.Error).toBeDefined();
+      });
+    });
+  });
+
+  describe("PUT /:id/task/:id/option", () => {
+    describe("When have token, valid data and IDs", () => {
+      test("Should return 200", async () => {
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //Create task
+        const data = {
+          title: "titulo",
+          description: "descripcion",
+        };
+
+        const createdTask = await api
+          .post(`${URI}/${calendaID}/addtask`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+        const taskID = createdTask.body.Task._id;
+
+        //Addin an option
+        const dataOption = { options: ["Baño", "Pisos", "Platos"] };
+        await api
+          .post(`${URI}/${calendaID}/task/${taskID}/option`)
+          .send(dataOption)
+          .set("Authorization", tokenFounder);
+
+        //Editing options
+        const editOptionData = { options: ["Baño", "Pisos"] };
+        const resp = await api
+          .put(`${URI}/${calendaID}/task/${taskID}/option`)
+          .send(editOptionData)
+          .set("Authorization", tokenFounder);
+
+        expect(resp.statusCode).toBe(200);
+      });
+
+      test("Should edit the options", async () => {
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //Create task
+        const data = {
+          title: "titulo",
+          description: "descripcion",
+        };
+
+        const createdTask = await api
+          .post(`${URI}/${calendaID}/addtask`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+        const taskID = createdTask.body.Task._id;
+
+        //Adding an option
+        const dataOption = {
+          options: ["Baño", "Pisos", "Platos"],
+        };
+        await api
+          .post(`${URI}/${calendaID}/task/${taskID}/option`)
+          .send(dataOption)
+          .set("Authorization", tokenFounder);
+
+        //Assertion
+        const taskA = await Task.findById(taskID);
+        expect(taskA!.options).toStrictEqual(dataOption.options);
+
+        //editing options
+        const editDataOptions = {
+          options: ["Baño", "Platos"],
+        };
+        await api
+          .put(`${URI}/${calendaID}/task/${taskID}/option`)
+          .send(editDataOptions)
+          .set("Authorization", tokenFounder);
+
+        //Assertion
+        const taskB = await Task.findById(taskID);
+        expect(taskB!.options).toStrictEqual(editDataOptions.options);
+      });
+    });
+
+    describe("When has token, valid IDs but no valid Data", () => {
+      test("Should respond 400 with no valid data", async () => {
+        const tokenFounder = await registerUser(userToRegister[0]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", tokenFounder);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        // Creating a task
+        const data = {
+          title: "Tarea01",
+        };
+
+        const createdTask = await api
+          .post(`${URI}/${calendaID}/addtask`)
+          .send(data)
+          .set("Authorization", tokenFounder);
+        const taskID = createdTask.body.Task._id;
+
+        //Adding an option
+        const dataOptions = { options: ["panchos"] };
+
+        const resp = await api
+          .post(`${URI}/${calendaID}/task/${taskID}/option`)
+          .send(dataOptions)
+          .set("Authorization", tokenFounder);
+
+        //Editing options
+        const badDataOptionEdit = [
+          {},
+          { options: [123, 123123] },
+          { options: ["bien", 123123] },
+        ];
+
+        for (let dataOption of badDataOptionEdit) {
+          const resp = await api
+            .put(`${URI}/${calendaID}/task/${taskID}/option`)
+            .send(dataOption)
+            .set("Authorization", tokenFounder);
+
+          expect(resp.statusCode).toBe(400);
+          expect(resp.body.Error).toBeDefined();
+        }
+      });
+    });
+
+    describe("When a regular user try to add an option", () => {
+      test("Should respond 400", async () => {
+        const founderToken = await registerUser(userToRegister[0]);
+        const userToken = await registerUser(userToRegister[1]);
+
+        //Create calendar
+        const createdCalendar = await api
+          .post(URI)
+          .send(body)
+          .set("Authorization", founderToken);
+        const calendaID = createdCalendar.body.Calendar._id;
+
+        //Creating a tasks
+        const data = { title: "algoo" };
+
+        const createdTask = await api
+          .post(`${URI}/${calendaID}/addtask`)
+          .send(data)
+          .set("Authorization", founderToken);
+        const taskID = createdTask.body.Task._id;
+
+        //Adding options
+        const dataOptions = {
+          options: ["algo"],
+        };
+        await api
+          .post(`${URI}/${calendaID}/task/${taskID}/option`)
+          .send(dataOptions)
+          .set("Authorization", founderToken);
+
+        //Editing options
+        const editDataOptions = {
+          options: [],
+        };
+        const resp = await api
+          .put(`${URI}/${calendaID}/task/${taskID}/option`)
           .send(dataOptions)
           .set("Authorization", userToken);
 

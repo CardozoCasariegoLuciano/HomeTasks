@@ -403,3 +403,32 @@ export const addTaskOption = async (req: Request, res: Response) => {
       .json({ Message: "Something went wrong", Error: err });
   }
 };
+
+export const editTaksOptions = async (req: Request, res: Response) => {
+  try {
+    const userID = req.userLoged;
+    const calendar = req.calendar;
+    const { options } = req.body;
+    const task = req.task;
+
+    if (!isFounder(userID, calendar)) {
+      return res
+        .status(400)
+        .json({ Error: "Just the founder can add an option" });
+    }
+
+    const joiVal = calendar_option_tasks.validate({ options });
+    if (joiVal.error) {
+      return res.status(400).json({ Error: joiVal.error });
+    }
+
+    task.options = options
+    await task.save();
+
+    res.status(200).json({ Message: "Options edited" });
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: err });
+  }
+};
