@@ -3,7 +3,6 @@ import { Schema, model, Document } from "mongoose";
 export interface ITasks extends Document {
   title: string;
   description: string;
-  done: boolean;
   options: string[];
 }
 
@@ -16,10 +15,6 @@ const tasksSchema = new Schema(
     description: {
       type: String,
       trim: true,
-    },
-    done: {
-      type: Boolean,
-      default: false
     },
     options: [
       {

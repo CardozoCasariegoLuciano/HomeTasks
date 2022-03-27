@@ -1,14 +1,18 @@
 import { Request, Response } from "express";
 import Calendar, { ICalendar } from "../models/calendar.model";
 import User, { IUser } from "../models/user.model";
+import Activity, { IActivity } from "../models/activity.model";
 import Invitation from "../models/invitation.model";
+import Todo from "../models/tasktoDo.model";
 import Task from "../models/task.model";
 import {
   calendar_membersList_validation,
   calendar_option_tasks,
   calendar_tasks,
+  calendar_ToDo,
   calendar_validation,
 } from "./validations/calendar.validation";
+import { IDasObject, isValidID } from "../helpers/functions";
 
 //Functions
 const isFounder = (userId: string, calendar: any) => {
@@ -314,10 +318,7 @@ export const getAllTasks = async (req: Request, res: Response) => {
         .json({ Error: "Just the founder can ask for that data" });
     }
 
-    const calendarPolulated = await calendar.populate(
-      "tasks",
-      "title description options"
-    );
+    const calendarPolulated = await calendar.populate("tasks");
 
     res.status(200).json({ Tasks: calendarPolulated.tasks });
   } catch (err) {
@@ -339,9 +340,7 @@ export const getATask = async (req: Request, res: Response) => {
         .json({ Error: "Just the founder can ask for that data" });
     }
 
-    const taskFinal = await Task.findById(task._id).select("-done");
-
-    res.status(200).json(taskFinal);
+    res.status(200).json(task);
   } catch (err) {
     return res
       .status(400)
@@ -422,10 +421,65 @@ export const editTaksOptions = async (req: Request, res: Response) => {
       return res.status(400).json({ Error: joiVal.error });
     }
 
-    task.options = options
+    task.options = options;
     await task.save();
 
     res.status(200).json({ Message: "Options edited" });
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: err });
+  }
+};
+
+export const addToDo = async (req: Request, res: Response) => {
+  try {
+    const userID = req.userLoged;
+    const { user, activities } = req.body;
+    const calendar = req.calendar;
+
+    if (!isFounder(userID, calendar)) {
+      return res
+        .status(400)
+        .json({ Error: "Just the founder can create a todo" });
+    }
+
+    const joiVal = calendar_ToDo.validate({ user, activities });
+    if (joiVal.error) {
+      return res.status(400).json({Error: joiVal.error });
+    }
+
+    const activityData: any = {
+      user,
+      calendar_id: calendar._id.toString(),
+      mondays: [],
+      thusdays: [],
+      wednesdays: [],
+      thursdays: [],
+      fridays: [],
+      saturdays: [],
+      sundays: [],
+    };
+
+    for (let todoDay in activities) {
+      for (let taskID of activities[todoDay]) {
+        if (!isValidID(taskID)) {
+          return res.status(400).json({ Error: "no valid ID" });
+        }
+        if (!calendar.tasks.includes(IDasObject(taskID))) {
+          return res.status(400).json({ Error: "no valid task" });
+        } else {
+          const newTodo = new Todo({ taskID });
+          await newTodo.save();
+          activityData[todoDay].push(newTodo._id);
+        }
+      }
+    }
+
+    const newActivity = new Activity(activityData);
+    await newActivity.save();
+
+    res.status(200).json({ Message: "Activity added", Activity: newActivity });
   } catch (err) {
     return res
       .status(400)
