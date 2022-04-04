@@ -3,6 +3,7 @@ import {IUser} from "../../src/models/user.model"
 import {ICalendar} from "../../src/models/calendar.model"
 import {Iinvitation} from "../../src/models/invitation.model"
 import {ITasks} from "../../src/models/task.model";
+import {IActivity} from "../../src/models/activity.model";
 
 declare global {
   namespace Express {
@@ -11,7 +12,8 @@ declare global {
       userLoged: string;
       calendar: ICalendar;
       invitation: Iinvitation;
-      task: ITasks
+      task: ITasks;
+      activity: IActivity;
     }
   }
 }

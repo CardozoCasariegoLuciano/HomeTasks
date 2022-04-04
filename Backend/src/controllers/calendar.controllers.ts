@@ -10,6 +10,7 @@ import {
   calendar_option_tasks,
   calendar_tasks,
   calendar_ToDo,
+  calendar_ToDo_edit,
   calendar_validation,
 } from "./validations/calendar.validation";
 import { IDasObject, isValidID } from "../helpers/functions";
@@ -19,10 +20,7 @@ const isFounder = (userId: string, calendar: any) => {
   return userId === calendar.founder._id.toString();
 };
 
-const wasAlreadyInvited = async (
-  user: IUser,
-  calendar: ICalendar
-): Promise<Boolean> => {
+const wasAlreadyInvited = async ( user: IUser, calendar: ICalendar): Promise<Boolean> => {
   let ret = false;
   for (let invitationID of user.invitations) {
     const invite = await Invitation.findById(invitationID);
@@ -34,8 +32,9 @@ const wasAlreadyInvited = async (
   return ret;
 };
 
-const isAlreadyPart = (user: IUser, calendar: ICalendar): Boolean => {
-  return user.calendars.includes(calendar._id);
+const isAlreadyPart = (userID: string, calendar: ICalendar): Boolean => {
+  const ret = calendar.members.includes(IDasObject(userID));
+  return ret;
 };
 
 //EndPoints
@@ -135,7 +134,7 @@ export const addMembers = async (req: Request, res: Response) => {
       }
 
       const wasInvited = await wasAlreadyInvited(user, calendar);
-      if (isAlreadyPart(user, calendar) || wasInvited) {
+      if (isAlreadyPart(user._id, calendar) || wasInvited) {
         continue;
       }
 
@@ -227,17 +226,17 @@ export const deleteMember = async (req: Request, res: Response) => {
     }
 
     for (let memberID of members) {
-      calendar.members = calendar.members.filter((memID) => memID != memberID);
-
       const user = await User.findById(memberID);
-      if (!user || !isAlreadyPart(user, calendar)) {
+      if (!user || !isAlreadyPart(user._id.toString(), calendar)) {
         continue;
       }
 
       user.calendars = user.calendars.filter(
         (cal) => cal._id.toString() !== calendar._id.toString()
       );
+
       await user.save();
+      calendar.members = calendar.members.filter((memID) => memID != memberID);
     }
 
     await calendar.save();
@@ -443,10 +442,15 @@ export const addToDo = async (req: Request, res: Response) => {
         .status(400)
         .json({ Error: "Just the founder can create a todo" });
     }
+    if (!isAlreadyPart(user, calendar)) {
+      return res
+        .status(400)
+        .json({ Error: "The user must be part of the calendar" });
+    }
 
     const joiVal = calendar_ToDo.validate({ user, activities });
     if (joiVal.error) {
-      return res.status(400).json({Error: joiVal.error });
+      return res.status(400).json({ Error: joiVal.error });
     }
 
     const activityData: any = {
@@ -486,3 +490,118 @@ export const addToDo = async (req: Request, res: Response) => {
       .json({ Message: "Something went wrong", Error: err });
   }
 };
+
+export const getToDos = async (req: Request, res: Response) => {
+  try {
+    const calendar = req.calendar;
+    const userID = req.userLoged;
+
+    if (!isAlreadyPart(userID, calendar)) {
+      return res
+        .status(400)
+        .json({ Error: "Must be part of the calendar to get this data" });
+    }
+
+    const activities = await Activity.find({ calendar_id: calendar._id });
+
+    res.status(200).json(activities);
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: err });
+  }
+};
+
+export const getAToDo = async (req: Request, res: Response) => {
+  try {
+    const calendar = req.calendar;
+    const userID = req.userLoged;
+    const activity = req.activity;
+
+    if (!isAlreadyPart(userID, calendar)) {
+      return res
+        .status(400)
+        .json({ Error: "Must be part of the calendar to get this data" });
+    }
+
+    res.status(200).json(activity);
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: err });
+  }
+};
+
+export const deleteToDo = async (req: Request ,res:Response) => {
+  try{
+    const calendar = req.calendar;
+    const userID = req.userLoged;
+    const activity = req.activity;
+
+    if (!isFounder(userID, calendar)) {
+      return res
+        .status(400)
+        .json({ Error: "Just the founder can delete a user  activity" });
+    }
+
+    const deleted = await Activity.findByIdAndRemove(activity._id)
+
+    res.status(200).json({Activity_Deleted: deleted})
+
+  }catch(err){
+    return res.status(400).json({Message: "Something went wrong", Error: err})
+  }
+}
+
+export const updateToDo = async (req: Request ,res:Response) => {
+  try{
+    const userID = req.userLoged;
+    const {activities} = req.body;
+    const calendar = req.calendar;
+    const activity = req.activity
+
+    if (!isFounder(userID, calendar)){
+      return res
+        .status(400)
+        .json({ Error: "Just the founder can create a todo" });
+    }
+
+    const joiVal = calendar_ToDo_edit.validate({activities});
+    if (joiVal.error) {
+      return res.status(400).json({ Error: joiVal.error });
+    }
+
+    const activityData: any = {
+      user: activity.user,
+      calendar_id: activity.calendar_id,
+      mondays: [],
+      thusdays: [],
+      wednesdays: [],
+      thursdays: [],
+      fridays: [],
+      saturdays: [],
+      sundays: [],
+    };
+
+    for (let todoDay in activities) {
+      for (let taskID of activities[todoDay]) {
+        if (!isValidID(taskID)) {
+          return res.status(400).json({ Error: "no valid ID" });
+        }
+        if (!calendar.tasks.includes(IDasObject(taskID))) {
+          return res.status(400).json({ Error: "no valid task" });
+        } else {
+          const newTodo = new Todo({ taskID });
+          await newTodo.save();
+          activityData[todoDay].push(newTodo._id);
+        }
+      }
+    }
+
+    const newActivity = await Activity.findByIdAndUpdate(activity._id, activityData, {new: true})
+
+    res.status(200).json({ Message: "Activity edited", Activity: newActivity });
+  }catch(err){
+    return res.status(400).json({Message: "Something went wrong", Error: err})
+  }
+}

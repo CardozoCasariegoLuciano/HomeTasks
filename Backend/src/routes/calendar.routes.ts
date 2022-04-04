@@ -1,8 +1,11 @@
 import { Router } from "express";
 import * as calendarCtrl from "../controllers/calendar.controllers";
-import { getCalendarByID, getTaskByID } from "../middlewares/getByID";
+import { getActivityByID, getCalendarByID, getTaskByID } from "../middlewares/getByID";
 import { hasToken } from "../middlewares/hasToken";
 const router = Router();
+
+
+//-->  /api/calendar/ === /
 
 router.route("/")
     .post(hasToken, calendarCtrl.newCalendar)
@@ -39,11 +42,18 @@ router.route("/:calendarID/task/:taskID/option")
     .put(hasToken, calendarCtrl.editTaksOptions)
 
 
-router.route("/:calendarID/todo")
+router.route("/:calendarID/activity")
     .post(hasToken, calendarCtrl.addToDo)
+    .get(hasToken, calendarCtrl.getToDos)
+
+router.route("/:calendarID/activity/:activityID")
+    .get(hasToken, calendarCtrl.getAToDo)
+    .delete(hasToken, calendarCtrl.deleteToDo)
+    .put(hasToken, calendarCtrl.updateToDo)
 
 
 router.param("calendarID", getCalendarByID)
 router.param("taskID", getTaskByID)
+router.param("activityID", getActivityByID)
 
 export default router;

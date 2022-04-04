@@ -32,3 +32,15 @@ export const calendar_ToDo = Joi.object({
     sundays: Joi.array().required(),
   }).required(),
 });
+
+export const calendar_ToDo_edit = Joi.object({
+  activities: Joi.object({
+    mondays: Joi.array().required(),
+    thusdays: Joi.array().required(),
+    wednesdays: Joi.array().required(),
+    thursdays: Joi.array().required(),
+    fridays: Joi.array().required(),
+    saturdays: Joi.array().required(),
+    sundays: Joi.array().required(),
+  }).required(),
+});

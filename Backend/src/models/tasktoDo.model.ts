@@ -14,7 +14,7 @@ const tasksSchema = new Schema(
     },
     done:{
       type: Boolean,
-      default: true
+      default: false
     }
   },
   {

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import User from "../models/user.model";
 import Invitation from "../models/invitation.model";
 import Task from "../models/task.model";
+import Activity from "../models/activity.model";
 import Calendar from "../models/calendar.model";
 import { objectID_validation } from "./validation/objectID.validation";
 
@@ -47,7 +48,6 @@ export const getCalendarByID = async ( req: Request, res: Response, next: NextFu
   }
 };
 
-
 export const getInvitationByID = async ( req: Request, res: Response, next: NextFunction, id: string) => {
   try {
     await objectID_validation.validateAsync({ id });
@@ -66,7 +66,6 @@ export const getInvitationByID = async ( req: Request, res: Response, next: Next
   }
 };
 
-
 export const getTaskByID = async ( req: Request, res: Response, next: NextFunction, id: string) => {
   try {
     await objectID_validation.validateAsync({ id });
@@ -77,6 +76,24 @@ export const getTaskByID = async ( req: Request, res: Response, next: NextFuncti
     }
 
     req.task = task;
+    next();
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: err });
+  }
+};
+
+export const getActivityByID = async ( req: Request, res: Response, next: NextFunction, id: string) => {
+  try {
+    await objectID_validation.validateAsync({ id });
+    const activity = await Activity.findById(id)
+
+    if (!activity) {
+      return res.status(400).json({ Message: "Taks not found" });
+    }
+
+    req.activity = activity;
     next();
   } catch (err) {
     return res
