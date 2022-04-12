@@ -19,23 +19,38 @@ export const getAllActivities = async (req: Request ,res:Response) => {
     return res.status(400).json({Message: "Something went wrong", Error: err})
   }
 }
-
-
-export const usercalendarActivities = async (req: Request ,res:Response) => {
+export const getATodo = async (req: Request ,res:Response) => {
   try{
-    const userID = req.userLoged
-    const calendar = req.calendar
+    const user = req.userLoged
+    const activity = req.activity
+    const todo = req.todo
 
-    const userActivities = await Activity.find({user: userID, calendar_id: calendar._id})
-      .populate("mondays")
-      .populate("thusdays")
-      .populate("wednesdays")
-      .populate("thursdays")
-      .populate("fridays")
-      .populate("saturdays")
-      .populate("sundays")
+    if (user.toString() != activity.user.toString()) {
+      return res.status(400).json({Error: "You cant ask for this todo"})
+    }
 
-    return res.status(200).json(userActivities)
+    await todo.populate("taskID")
+
+    res.status(200).json(todo)
+  }catch(err){
+    return res.status(400).json({Message: "Something went wrong", Error: err})
+  }
+}
+
+export const toggleDONE = async (req: Request ,res:Response) => {
+  try{
+    const user = req.userLoged
+    const activity = req.activity
+    const todo = req.todo
+
+    if (user.toString() != activity.user.toString()) {
+      return res.status(400).json({Error: "You cant ask for this todo"})
+    }
+
+    todo.done = !todo.done
+    await todo.save()
+
+    res.status(200).json({Message: `Task done: ${todo.done}`})
   }catch(err){
     return res.status(400).json({Message: "Something went wrong", Error: err})
   }

@@ -4,6 +4,7 @@ import Invitation from "../models/invitation.model";
 import Task from "../models/task.model";
 import Activity from "../models/activity.model";
 import Calendar from "../models/calendar.model";
+import ToDo from "../models/tasktoDo.model";
 import { objectID_validation } from "./validation/objectID.validation";
 
 export const getUserByID = async ( req: Request, res: Response, next: NextFunction, id: string) => {
@@ -94,6 +95,24 @@ export const getActivityByID = async ( req: Request, res: Response, next: NextFu
     }
 
     req.activity = activity;
+    next();
+  } catch (err) {
+    return res
+      .status(400)
+      .json({ Message: "Something went wrong", Error: err });
+  }
+};
+
+export const getToDoByID = async ( req: Request, res: Response, next: NextFunction, id: string) => {
+  try {
+    await objectID_validation.validateAsync({ id });
+    const todo = await ToDo.findById(id)
+
+    if (!todo) {
+      return res.status(400).json({ Message: "Taks not found" });
+    }
+
+    req.todo = todo;
     next();
   } catch (err) {
     return res

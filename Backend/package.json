@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "mon": "nodemon src/index.ts",
-    "production": "npx tsc"
+    "production": "npx tsc",
+    "test": "jest --detectOpenHandles"
   },
   "keywords": [],
   "author": "",

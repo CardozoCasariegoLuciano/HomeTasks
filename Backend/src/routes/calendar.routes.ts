@@ -51,6 +51,9 @@ router.route("/:calendarID/activity/:activityID")
     .delete(hasToken, calendarCtrl.deleteToDo)
     .put(hasToken, calendarCtrl.updateToDo)
 
+router.route("/:calendarID/table")
+    .get(hasToken, calendarCtrl.getFullTable)
+
 
 router.param("calendarID", getCalendarByID)
 router.param("taskID", getTaskByID)

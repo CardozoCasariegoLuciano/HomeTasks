@@ -605,3 +605,28 @@ export const updateToDo = async (req: Request ,res:Response) => {
     return res.status(400).json({Message: "Something went wrong", Error: err})
   }
 }
+
+export const getFullTable = async (req: Request ,res:Response) => {
+  try{
+    const calendar = req.calendar
+    const user = req.userLoged
+
+    if (!isAlreadyPart(user, calendar)) {
+      return res.status(400).json({Message: "You need to be part of the calendar"})
+    }
+
+    const allAct = await Activity.find({calendar_id: calendar._id})
+      .populate("user", "name email")
+      .populate({path: "mondays", populate: {path:"taskID"}})
+      .populate({path: "thusdays", populate: {path:"taskID"}})
+      .populate({path: "wednesdays", populate: {path:"taskID"}})
+      .populate({path: "thursdays", populate: {path:"taskID"}})
+      .populate({path: "fridays", populate: {path:"taskID"}})
+      .populate({path: "saturdays", populate: {path:"taskID"}})
+      .populate({path: "sundays", populate: {path:"taskID"}})
+
+    res.status(200).json(allAct)
+  }catch(err){
+    return res.status(400).json({Message: "Something went wrong", Error: err})
+  }
+}

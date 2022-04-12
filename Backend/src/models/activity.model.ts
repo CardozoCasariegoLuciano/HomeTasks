@@ -63,7 +63,7 @@ const ActivitySchema = new Schema(
     ],
     calendar_id: {
       type: mongoose.Types.ObjectId,
-      ref: "User",
+      ref: "Calendar",
       required: true,
     },
   },

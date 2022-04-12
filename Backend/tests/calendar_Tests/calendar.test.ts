@@ -2,6 +2,7 @@ import {
   api,
   getIdByToken,
   registerUser,
+  setUp,
   userToRegister,
 } from "../generic_helpers";
 import mongoose from "mongoose";
@@ -1899,4 +1900,45 @@ describe("/api/calendar", () => {
       });
     });
   });
+
+  describe("GET /:id/table", () => {
+    describe("When all data is ok", () => {
+      test("should return 200", async()=>{
+        const {calendarID, tokenFounder} = await setUp()
+
+        const resp = await api.get(`${URI}/${calendarID}/table`).set("Authorization", tokenFounder)
+        expect(resp.statusCode).toBe(200)
+      })
+
+      test("should return an array", async()=>{
+        const {calendarID, tokenFounder} = await setUp()
+
+        const resp = await api.get(`${URI}/${calendarID}/table`).set("Authorization", tokenFounder)
+        expect(resp.body).toBeInstanceOf(Array)
+      })
+
+      test("All items are activities from the calendar in URL", async()=>{
+        const {calendarID, tokenFounder} = await setUp()
+
+        const resp = await api.get(`${URI}/${calendarID}/table`).set("Authorization", tokenFounder)
+        for (let act of resp.body) {
+          expect(act.calendar_id).toBe(calendarID)
+          expect(act.user).toBeDefined()
+          expect(act.mondays).toBeDefined()
+          expect(act.fridays).toBeDefined()
+        }
+      })
+    })
+
+    describe("When a user who is not part of the calendar try to get data", () => {
+      test("should return 400", async()=>{
+        const {calendarID} = await setUp()
+        const otherUserToken = await registerUser(userToRegister[2])
+
+        const resp = await api.get(`${URI}/${calendarID}/table`).set("Authorization", otherUserToken)
+        expect(resp.statusCode).toBe(400)
+      })
+    })
+
+  })
 });
