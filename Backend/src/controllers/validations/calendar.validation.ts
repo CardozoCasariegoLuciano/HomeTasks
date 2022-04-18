@@ -23,13 +23,13 @@ export const calendar_option_tasks = Joi.object({
 export const calendar_ToDo = Joi.object({
   user: Joi.string().min(3).required(),
   activities: Joi.object({
-    mondays: Joi.array().required(),
-    thusdays: Joi.array().required(),
-    wednesdays: Joi.array().required(),
-    thursdays: Joi.array().required(),
-    fridays: Joi.array().required(),
-    saturdays: Joi.array().required(),
-    sundays: Joi.array().required(),
+    mondays: Joi.array(),
+    thusdays: Joi.array(),
+    wednesdays: Joi.array(),
+    thursdays: Joi.array(),
+    fridays: Joi.array(),
+    saturdays: Joi.array(),
+    sundays: Joi.array(),
   }).required(),
 });
 

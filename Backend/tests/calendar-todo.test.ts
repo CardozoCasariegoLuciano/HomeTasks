@@ -3,15 +3,16 @@ import {
   getIdByToken,
   registerUser,
   userToRegister,
-} from "../generic_helpers";
+  setUp,
+} from "./generic_helpers";
 import mongoose from "mongoose";
-import Calendar from "../../src/models/calendar.model";
-import Invitation from "../../src/models/invitation.model";
-import Activity from "../../src/models/activity.model";
-import Todo from "../../src/models/tasktoDo.model";
-import User from "../../src/models/user.model";
-import Task from "../../src/models/task.model";
-import { cases, URI } from "../calendar_Tests/utils";
+import Calendar from "../src/models/calendar.model";
+import Invitation from "../src/models/invitation.model";
+import Activity from "../src/models/activity.model";
+import Todo from "../src/models/tasktoDo.model";
+import User from "../src/models/user.model";
+import Task from "../src/models/task.model";
+
 
 afterAll(() => {
   mongoose.disconnect();
@@ -26,67 +27,7 @@ beforeEach(async () => {
   await Todo.deleteMany({});
 });
 
-const setUp = async () => {
-  const body = cases[0];
-  const tokenFounder = await registerUser(userToRegister[0]);
-  const tokenUser = await registerUser(userToRegister[1]);
-  const userID = await getIdByToken(tokenUser);
-
-  //Create calendar
-  const createdCalendar = await api
-    .post(URI)
-    .send(body)
-    .set("Authorization", tokenFounder);
-  const calendarID = createdCalendar.body.Calendar._id;
-
-  //Adding a task
-  const data = {
-    title: "Baños",
-    description: "Limpiar el baño y lavar la ropa",
-  };
-  const createdTask = await api
-    .post(`${URI}/${calendarID}/addtask`)
-    .send(data)
-    .set("Authorization", tokenFounder);
-  const taskID = createdTask.body.Task._id;
-
-  //Inviting user
-  await api
-    .post(`${URI}/${calendarID}/addmember`)
-    .send({ members: [userID] })
-    .set("Authorization", tokenFounder);
-  //Accept invitation
-  const userLoged = await User.findById(userID);
-  const inviID = userLoged!.invitations[0];
-
-  //accepting invitation
-  await api
-    .post(`/api/invitations/${inviID}/accept`)
-    .set("Authorization", tokenUser);
-
-  //Adding a user activity
-  const activity = {
-    user: userID,
-    activities: {
-      mondays: [taskID, taskID],
-      thusdays: [],
-      wednesdays: [taskID],
-      thursdays: [],
-      fridays: [taskID],
-      saturdays: [taskID],
-      sundays: [],
-    },
-  };
-
-  return {
-    userID,
-    tokenUser,
-    tokenFounder,
-    calendarID,
-    activity,
-    taskID,
-  };
-};
+export const URI = "/api/calendar";
 
 describe("/api/calendar", () => {
   describe("POST /:id/activity", () => {
@@ -102,36 +43,29 @@ describe("/api/calendar", () => {
 
       test("Should create a new activity into DB", async () => {
         const { calendarID, activity, tokenFounder } = await setUp();
+        //An activity is added on the setUp
 
         const before = await Activity.find();
-        expect(before).toHaveLength(0);
+        expect(before).toHaveLength(1);
 
+        //Add other activity
         await api
           .post(`${URI}/${calendarID}/activity`)
           .send(activity)
           .set("Authorization", tokenFounder);
 
         const after = await Activity.find();
-        expect(after).toHaveLength(1);
+        expect(after).toHaveLength(2);
       });
     });
 
     describe("When invalid data is sended", () => {
       test("Shoudl return 400", async () => {
-        const { calendarID, taskID, userID, tokenFounder } = await setUp();
+        const { calendarID, userID, tokenFounder } = await setUp();
 
         const badCases = [
           {},
           { user: userID },
-          {
-            user: userID,
-            activities: {
-              lunes: [taskID],
-              martes: [],
-              miercoles: [],
-            },
-          },
-          { user: userID, activities: {} },
           {
             user: userID,
             activities: {
@@ -158,10 +92,9 @@ describe("/api/calendar", () => {
 
     describe("When try to add activity an no member user", () => {
       test("Shoudl return 400", async () => {
-        const { calendarID, tokenFounder } = await setUp();
+        const { calendarID, tokenFounder, userNoMemberTk } = await setUp();
 
-        const userTk = await registerUser(userToRegister[2]);
-        const userID = await getIdByToken(userTk);
+        const userID = await getIdByToken(userNoMemberTk);
 
         const activity = {
           user: userID,
@@ -211,7 +144,7 @@ describe("/api/calendar", () => {
         const resp = await api
           .get(`${URI}/${calendarID}/activity`)
           .set("Authorization", tokenFounder);
-        expect(resp.body).toHaveLength(0);
+        expect(resp.body).toHaveLength(1);
 
         await api
           .post(`${URI}/${calendarID}/activity`)
@@ -221,18 +154,17 @@ describe("/api/calendar", () => {
         const resp1 = await api
           .get(`${URI}/${calendarID}/activity`)
           .set("Authorization", tokenFounder);
-        expect(resp1.body).toHaveLength(1);
+        expect(resp1.body).toHaveLength(2);
       });
     });
 
     describe("When a no member try to get", () => {
       test("Should return 400", async () => {
-        const { calendarID } = await setUp();
-        const userToken = await registerUser(userToRegister[2]);
+        const { calendarID, userNoMemberTk } = await setUp();
 
         const resp = await api
           .get(`${URI}/${calendarID}/activity`)
-          .set("Authorization", userToken);
+          .set("Authorization", userNoMemberTk);
         expect(resp.statusCode).toBe(400);
       });
     });
@@ -296,8 +228,7 @@ describe("/api/calendar", () => {
 
     describe("When a no member try to get", () => {
       test("Should return 400", async () => {
-        const { calendarID, activity, tokenFounder } = await setUp();
-        const userToken = await registerUser(userToRegister[2]);
+        const { calendarID, activity, tokenFounder, userNoMemberTk } = await setUp();
 
         //Create activity
         const createdActivity = await api
@@ -308,7 +239,7 @@ describe("/api/calendar", () => {
 
         const resp = await api
           .get(`${URI}/${calendarID}/activity/${activityID}`)
-          .set("Authorization", userToken);
+          .set("Authorization", userNoMemberTk);
 
         expect(resp.statusCode).toBe(400);
       });
@@ -360,8 +291,7 @@ describe("/api/calendar", () => {
 
     describe("When a regular user try to delete a todo", () => {
       test("Should return 400", async () => {
-        const { calendarID, activity, tokenFounder } = await setUp();
-        const userToken = await registerUser(userToRegister[2]);
+        const { calendarID, activity, tokenFounder, userNoMemberTk } = await setUp();
 
         //Create activity
         const createdActivity = await api
@@ -373,7 +303,7 @@ describe("/api/calendar", () => {
         //Delete that activity
         const resp = await api
           .delete(`${URI}/${calendarID}/activity/${activityID}`)
-          .set("Authorization", userToken);
+          .set("Authorization", userNoMemberTk);
         expect(resp.statusCode).toBe(400);
       });
     });

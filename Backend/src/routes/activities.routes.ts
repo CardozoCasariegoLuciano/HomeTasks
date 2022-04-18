@@ -7,10 +7,10 @@ import {hasToken} from "../middlewares/hasToken";
 router.route("/")
   .get(hasToken, actCtrl.getAllActivities)
 
-router.route("/activity/:activityID/:todoID")
+router.route("/:activityID/:todoID")
   .get(hasToken, actCtrl.getATodo)
 
-router.route("/activity/:activityID/:todoID/done")
+router.route("/:activityID/:todoID/done")
   .post(hasToken, actCtrl.toggleDONE)
 
 

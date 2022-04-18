@@ -27,6 +27,12 @@ export const userToRegister = [
     password: "123123",
     repited_password: "123123",
   },
+  {
+    name: "Romina",
+    email: "romina@gmail.com",
+    password: "123123",
+    repited_password: "123123",
+  },
 ];
 
 export const userToLogin = [
@@ -42,6 +48,10 @@ export const userToLogin = [
     email: "Ivan@gmail.com",
     password: "123123",
   },
+  {
+    email: "romina@gmail.com",
+    password: "123123",
+  },
 ];
 
 //Functions
@@ -49,18 +59,6 @@ export const registerUser = async (data: any) => {
   const resp = await api.post("/api/auth/register").send(data);
   const token = resp.body.token;
   return token;
-};
-
-export const loginUser = async (data: any) => {
-  const resp = await api.post("/api/auth/login").send(data);
-  const token = resp.body.token;
-  return token;
-};
-
-export const addUser = async (data: any) => {
-  const user = new User(data);
-  await user.save();
-  return user;
 };
 
 export const getIdByToken = async (token: string) => {
@@ -74,9 +72,12 @@ export const setUp = async () => {
 
   const body = { title: "Title1"}
   const URIcalendar = "/api/calendar"
+
   const tokenFounder = await registerUser(userToRegister[0]);
   const tokenUser = await registerUser(userToRegister[1]);
+  const userNoMemberTk = await registerUser(userToRegister[2]);
   const userID = await getIdByToken(tokenUser);
+  const founderID = await getIdByToken(tokenFounder);
 
   //Create calendar
   const createdCalendar = await api
@@ -130,11 +131,44 @@ export const setUp = async () => {
 
   return {
     userID,
+    founderID,
     tokenUser,
     tokenFounder,
     calendarID,
     activity,
     taskID,
     createdActivity : createdActivity.body.Activity,
+    createdCalendar: createdCalendar.body.Calendar,
+    userNoMemberTk, 
+  };
+};
+
+export const simpleSetUp = async () => {
+
+  const body = { title: "Title1"}
+  const URIcalendar = "/api/calendar"
+
+  const tokenFounder = await registerUser(userToRegister[0]);
+  const founderID = await getIdByToken(tokenFounder);
+  const tokenUser = await registerUser(userToRegister[1]);
+  const userID = await getIdByToken(tokenUser);
+  const userNoMemberTk = await registerUser(userToRegister[2]);
+  
+
+  //Create calendar
+  const createdCalendar = await api
+    .post(URIcalendar)
+    .send(body)
+    .set("Authorization", tokenFounder);
+  const calendarID = createdCalendar.body.Calendar._id;
+
+   return {
+    userID,
+    tokenUser,
+    founderID,
+    tokenFounder,
+    calendarID,  
+    createdCalendar: createdCalendar.body.Calendar,
+    userNoMemberTk, 
   };
 };
