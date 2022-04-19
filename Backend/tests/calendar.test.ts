@@ -760,8 +760,8 @@ describe("/api/calendar", () => {
         for (let act of resp.body) {
           expect(act.calendar_id).toBe(calendarID)
           expect(act.user).toBeDefined()
-          expect(act.mondays).toBeDefined()
-          expect(act.fridays).toBeDefined()
+          expect(act.activities.mondays).toBeDefined()
+          expect(act.activities.fridays).toBeDefined()
         }
       })
     })

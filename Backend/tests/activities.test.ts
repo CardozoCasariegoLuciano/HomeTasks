@@ -49,7 +49,7 @@ describe("/api/activities/", () => {
     describe("When have token and valid ID", () => {
       test("Should return 200", async()=>{
         const {tokenUser, createdActivity} = await setUp()
-        const mondayFstToDo = createdActivity.mondays[0]
+        const mondayFstToDo = createdActivity.activities.mondays[0]
 
         const resp = await api.get(`${URI}/${createdActivity._id}/${mondayFstToDo}`).set("Authorization", tokenUser)
 
@@ -58,7 +58,7 @@ describe("/api/activities/", () => {
 
       test("Should return a single object", async()=>{
         const {tokenUser, createdActivity} = await setUp()
-        const mondayFstToDo = createdActivity.mondays[0]
+        const mondayFstToDo = createdActivity.activities.mondays[0]
 
         const resp = await api.get(`${URI}/${createdActivity._id}/${mondayFstToDo}`).set("Authorization", tokenUser)
 
@@ -69,7 +69,7 @@ describe("/api/activities/", () => {
     describe("When other user try to see the Todo", () => {
       test("Should return 400", async()=>{
         const {userNoMemberTk,  createdActivity} = await setUp()
-        const mondayFstToDo = createdActivity.mondays[0]
+        const mondayFstToDo = createdActivity.activities.mondays[0]
 
         const resp = await api.get(`${URI}/${createdActivity._id}/${mondayFstToDo}`).set("Authorization", userNoMemberTk)
 
@@ -82,7 +82,7 @@ describe("/api/activities/", () => {
     describe("When have token and valid ID", () => {
       test("Should return 200", async()=>{
         const {tokenUser, createdActivity} = await setUp()
-        const mondayFstToDo = createdActivity.mondays[0]
+        const mondayFstToDo = createdActivity.activities.mondays[0]
 
         const resp = await api.post(`${URI}/${createdActivity._id}/${mondayFstToDo}/done`).set("Authorization", tokenUser)
 
@@ -91,7 +91,7 @@ describe("/api/activities/", () => {
 
       test("Should change DONE atribute from a TODO", async()=>{
         const {tokenUser, createdActivity} = await setUp()
-        const mondayFstToDo = createdActivity.mondays[0]
+        const mondayFstToDo = createdActivity.activities.mondays[0]
 
         const todoBefore = await Todo.findById(mondayFstToDo)
         expect(todoBefore!.done).toBeFalsy()
@@ -104,7 +104,7 @@ describe("/api/activities/", () => {
 
       test("Should change DONE atribute again from a TODO", async()=>{
         const {tokenUser, createdActivity} = await setUp()
-        const mondayFstToDo = createdActivity.mondays[0]
+        const mondayFstToDo = createdActivity.activities.mondays[0]
 
         //First Done
         await api.post(`${URI}/${createdActivity._id}/${mondayFstToDo}/done`).set("Authorization", tokenUser)
@@ -124,7 +124,7 @@ describe("/api/activities/", () => {
     describe("When other user try to see the Todo", () => {
       test("Should return 400", async()=>{
         const {userNoMemberTk, createdActivity} = await setUp()
-        const mondayFstToDo = createdActivity.mondays[0]
+        const mondayFstToDo = createdActivity.activities.mondays[0]
 
         const resp = await api.post(`${URI}/${createdActivity._id}/${mondayFstToDo}/done`).set("Authorization", userNoMemberTk)
 

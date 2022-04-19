@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import Calendar, { ICalendar } from "../models/calendar.model";
 import User, { IUser } from "../models/user.model";
-import Activity, { IActivity } from "../models/activity.model";
+import Activity from "../models/activity.model";
 import Invitation from "../models/invitation.model";
 import Todo from "../models/tasktoDo.model";
 import Task from "../models/task.model";
@@ -456,13 +456,15 @@ export const addToDo = async (req: Request, res: Response) => {
     const activityData: any = {
       user,
       calendar_id: calendar._id.toString(),
-      mondays: [],
-      thusdays: [],
-      wednesdays: [],
-      thursdays: [],
-      fridays: [],
-      saturdays: [],
-      sundays: [],
+      activities: {
+        mondays: [],
+        thusdays: [],
+        wednesdays: [],
+        thursdays: [],
+        fridays: [],
+        saturdays: [],
+        sundays: [],
+      }
     };
 
     for (let todoDay in activities) {
@@ -475,7 +477,7 @@ export const addToDo = async (req: Request, res: Response) => {
         } else {
           const newTodo = new Todo({ taskID });
           await newTodo.save();
-          activityData[todoDay].push(newTodo._id);
+          activityData.activities[todoDay].push(newTodo._id);
         }
       }
     }
@@ -574,13 +576,15 @@ export const updateToDo = async (req: Request ,res:Response) => {
     const activityData: any = {
       user: activity.user,
       calendar_id: activity.calendar_id,
-      mondays: [],
-      thusdays: [],
-      wednesdays: [],
-      thursdays: [],
-      fridays: [],
-      saturdays: [],
-      sundays: [],
+      activities: {
+        mondays: [],
+        thusdays: [],
+        wednesdays: [],
+        thursdays: [],
+        fridays: [],
+        saturdays: [],
+        sundays: [],
+      }
     };
 
     for (let todoDay in activities) {
@@ -593,7 +597,7 @@ export const updateToDo = async (req: Request ,res:Response) => {
         } else {
           const newTodo = new Todo({ taskID });
           await newTodo.save();
-          activityData[todoDay].push(newTodo._id);
+          activityData.activities[todoDay].push(newTodo._id);
         }
       }
     }
@@ -617,13 +621,13 @@ export const getFullTable = async (req: Request ,res:Response) => {
 
     const allAct = await Activity.find({calendar_id: calendar._id})
       .populate("user", "name email")
-      .populate({path: "mondays", populate: {path:"taskID"}})
-      .populate({path: "thusdays", populate: {path:"taskID"}})
-      .populate({path: "wednesdays", populate: {path:"taskID"}})
-      .populate({path: "thursdays", populate: {path:"taskID"}})
-      .populate({path: "fridays", populate: {path:"taskID"}})
-      .populate({path: "saturdays", populate: {path:"taskID"}})
-      .populate({path: "sundays", populate: {path:"taskID"}})
+      .populate({
+        path: "activities",
+        populate: {
+          path: "mondays thusdays wednesdays thursdays fridays saturdays sundays",
+          populate: "taskID"
+        }
+      })
 
     res.status(200).json(allAct)
   }catch(err){

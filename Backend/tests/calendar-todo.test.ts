@@ -352,9 +352,9 @@ describe("/api/calendar", () => {
           .set("Authorization", tokenFounder);
         const activityID = createdActivity.body.Activity._id;
 
-        expect(createdActivity.body.Activity.mondays).toHaveLength(2);
-        expect(createdActivity.body.Activity.thusdays).toHaveLength(0);
-        expect(createdActivity.body.Activity.fridays).toHaveLength(1);
+        expect(createdActivity.body.Activity.activities.mondays).toHaveLength(2);
+        expect(createdActivity.body.Activity.activities.thusdays).toHaveLength(0);
+        expect(createdActivity.body.Activity.activities.fridays).toHaveLength(1);
 
         //Edit Actrivity
         const activityEDIT = {
@@ -374,9 +374,9 @@ describe("/api/calendar", () => {
           .send(activityEDIT)
           .set("Authorization", tokenFounder);
 
-        expect(resp.body.Activity.mondays).toHaveLength(0);
-        expect(resp.body.Activity.thusdays).toHaveLength(2);
-        expect(resp.body.Activity.fridays).toHaveLength(0);
+        expect(resp.body.Activity.activities.mondays).toHaveLength(0);
+        expect(resp.body.Activity.activities.thusdays).toHaveLength(2);
+        expect(resp.body.Activity.activities.fridays).toHaveLength(0);
       });
     });
 

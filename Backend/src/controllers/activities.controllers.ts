@@ -6,19 +6,17 @@ export const getAllActivities = async (req: Request ,res:Response) => {
     const userID = req.userLoged
 
     const userActivities = await Activity.find({user: userID})
-      .populate("mondays")
-      .populate("thusdays")
-      .populate("wednesdays")
-      .populate("thursdays")
-      .populate("fridays")
-      .populate("saturdays")
-      .populate("sundays")
+      .populate({
+        path:"activities",
+        populate: "mondays thusdays wednesdays thursdays fridays sundays saturdays",
+      })
 
     return res.status(200).json(userActivities)
   }catch(err){
     return res.status(400).json({Message: "Something went wrong", Error: err})
   }
 }
+
 export const getATodo = async (req: Request ,res:Response) => {
   try{
     const user = req.userLoged
