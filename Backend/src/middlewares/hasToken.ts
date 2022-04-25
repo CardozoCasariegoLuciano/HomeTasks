@@ -9,7 +9,7 @@ export const hasToken = async (
   next: NextFunction
 ) => {
   try {
-    const token = req.header("Authorization");
+    const token = req.header("Authorization")
 
     if (token) {
       const data = jwt.verify(token, config.TOKEN_KEY) as JwtPayload;
@@ -17,12 +17,13 @@ export const hasToken = async (
       req.userLoged = data._id;
       next();
     } else {
-      return res.status(400).json({ Error: "No token provider" });
+      res.statusCode = 400
+      res.json({Error: "No token provider"});
     }
   } catch (err) {
-    return res
-      .status(400)
-      .json({ Message: "Something went wrong", Error: err });
+    //return res.status(400).json({ Message: "Something went wrong", Error: err });
+    res.statusCode = 400
+    res.json({ Message: "Something went wrong", Error: err });
   }
 };
 

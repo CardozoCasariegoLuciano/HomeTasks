@@ -1,11 +1,11 @@
-import { Schema, model, Document } from "mongoose";
+import mongoose, { Schema, model, Document } from "mongoose";
 
 export interface ICalendar extends Document {
   title: string;
-  members: Schema.Types.ObjectId[];
-  admins: Schema.Types.ObjectId[];
-  founder: Schema.Types.ObjectId;
-  prevWeek: Schema.Types.ObjectId;
+  description: string;
+  members: mongoose.Types.ObjectId[];
+  founder: mongoose.Types.ObjectId;
+  tasks: mongoose.Types.ObjectId[];
 }
 
 const CalendarSchema = new Schema(
@@ -15,27 +15,27 @@ const CalendarSchema = new Schema(
       lowercase: true,
       required: true,
     },
+    description: {
+      type: String,
+      trim: true,
+    },
     founder: {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Types.ObjectId,
       ref: "User",
       required: true,
     },
     members: [
       {
-        type: Schema.Types.ObjectId,
+        type: mongoose.Types.ObjectId,
         ref: "User",
       },
     ],
-    admins: [
+    tasks: [
       {
-        type: Schema.Types.ObjectId,
-        ref: "User",
+        type: mongoose.Types.ObjectId,
+        ref: "Task",
       },
     ],
-    prevWeek: {
-      type: Schema.Types.ObjectId,
-      ref: "Calendar",
-    },
   },
   {
     timestamps: true,

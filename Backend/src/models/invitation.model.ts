@@ -1,12 +1,13 @@
-import { Schema, model, Document } from "mongoose";
+import mongoose, { Schema, model, Document } from "mongoose";
 
 export interface Iinvitation extends Document {
   calendarName: string;
   message: string;
-  from: Schema.Types.ObjectId;
-  to: Schema.Types.ObjectId;
-  calendarID: Schema.Types.ObjectId;
-  isAcepted: boolean;
+  from: mongoose.Types.ObjectId;
+  to: mongoose.Types.ObjectId;
+  calendarID: mongoose.Types.ObjectId;
+  status: string;
+  show: boolean
 }
 
 const InvitationSchema = new Schema(
@@ -35,9 +36,13 @@ const InvitationSchema = new Schema(
       ref: "Calendar",
       required: true,
     },
-    isAcepted: {
+    status: {
+      type: String,
+      default: "Pending",
+    },
+    show: {
       type: Boolean,
-      default: false,
+      default: true,
     },
   },
   {
