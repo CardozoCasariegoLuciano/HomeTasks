@@ -210,6 +210,7 @@ describe("/api/calendar", () => {
           .post(`${URI}/${calendarID}/addmember`)
           .send(data)
           .set("Authorization", tokenFounder);
+
         expect(resp.statusCode).toBe(200);
       });
 

@@ -84,6 +84,7 @@ export const setUp = async () => {
     .post(URIcalendar)
     .send(body)
     .set("Authorization", tokenFounder);
+
   const calendarID = createdCalendar.body.Calendar._id;
 
   //Adding a task
