@@ -1,0 +1,62 @@
+.Login {
+  //background-color: var(--main-color-500);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  form {
+    display: flex;
+    flex-direction: column;
+    width: 400px;
+    padding: 15px;
+
+    border: 1px solid #eee;
+    border-radius: 7px;
+    box-shadow: 1px 1px 5px 0px rgba(50, 50, 50, 0.75);
+
+    h2 {
+      text-align: center;
+      font-size: 32px;
+    }
+
+    input,
+    button {
+      padding: 10px;
+      border: none;
+      outline: none;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 80%;
+      border-bottom: 1px solid grey;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-bottom: 2px solid tomato;
+    }
+
+    label {
+      margin-bottom: 10px;
+    }
+
+    button {
+      width: 200px;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+  }
+}
+
+.action_section {
+  label {
+    margin-left: 15px;
+  }
+  input[type="checkbox"] {
+    transform: scale(1.3);
+  }
+}
